@@ -1,0 +1,28 @@
+project_id = "mydyesohbbmoyrausgvn"
+
+[functions.notify-appointment]
+verify_jwt = true
+
+[functions.admin-appointments]
+verify_jwt = true
+
+[functions.approve-appointment]
+verify_jwt = false
+
+[functions.notify-case]
+verify_jwt = true
+
+[functions.admin-cases]
+verify_jwt = true
+
+[functions.auth-otp]
+verify_jwt = true
+
+[functions.admin-secret-codes]
+verify_jwt = true
+
+[functions.password-reset]
+verify_jwt = false
+
+[functions.device-verify]
+verify_jwt = false
