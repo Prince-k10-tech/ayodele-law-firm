@@ -1,6 +1,7 @@
-import { MapPin, Phone, Mail } from 'lucide-react';
+import { MapPin, Phone, Mail, Info } from 'lucide-react';
 import { Button } from '@/components/Button';
 import { Logo } from '@/components/Logo';
+import { Link } from '@/lib/router';
 
 export function HomePage() {
   return (
@@ -50,6 +51,14 @@ export function HomePage() {
               Register Account
             </Button>
           </div>
+
+          <Link
+            to="/firm-profile"
+            className="mt-8 inline-flex items-center gap-2 text-xs uppercase tracking-wider text-amber-300/60 underline-offset-4 transition hover:text-amber-200 hover:underline animate-[fadeInUp_0.8s_ease-out_0.55s_both]"
+          >
+            <Info className="h-3.5 w-3.5" />
+            View Firm Profile
+          </Link>
         </div>
 
         <footer className="w-full px-6 pb-6 pt-8 text-center">

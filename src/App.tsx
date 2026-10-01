@@ -8,8 +8,7 @@ import { AdminPage } from '@/pages/AdminPage';
 import { ApprovePage } from '@/pages/ApprovePage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { DeviceVerifyPage } from '@/pages/DeviceVerifyPage';
-import { AdminSecretCodePage } from '@/pages/AdminSecretCodePage';
-
+import { FirmProfilePage } from '@/pages/FirmProfilePage';
 function Routes() {
   const { path } = useRouter();
 
@@ -19,7 +18,7 @@ function Routes() {
   if (clean.startsWith('register')) return <RegisterPage />;
   if (clean.startsWith('forgot-password')) return <ForgotPasswordPage />;
   if (clean.startsWith('device-verify')) return <DeviceVerifyPage />;
-  if (clean.startsWith('admin-change-code')) return <AdminSecretCodePage />;
+  if (clean.startsWith('firm-profile')) return <FirmProfilePage />;
   if (clean.startsWith('approve')) return <ApprovePage />;
   if (clean.startsWith('admin')) return <AdminPage />;
   if (clean.startsWith('dashboard')) return <DashboardPage />;
