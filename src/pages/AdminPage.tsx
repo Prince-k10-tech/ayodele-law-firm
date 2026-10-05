@@ -45,10 +45,10 @@ type CaseSubmission = {
   created_at: string;
 };
 
-const ADMIN_EMAILS = ['koayodeleandco@gmail.com', 'iretomiwadada780@gmail.com'];
+const ADMIN_EMAILS = ['koayodeleandco@gmail.com'];
 
 export function AdminPage() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, isSuperadmin, role } = useAuth();
   const { navigate } = useRouter();
   const [tab, setTab] = useState<'appointments' | 'cases'>('appointments');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -58,7 +58,7 @@ export function AdminPage() {
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const isAdmin = user?.email ? ADMIN_EMAILS.includes(user.email.toLowerCase()) : false;
+  const isAdmin = role === 'admin' || role === 'superadmin' || (user?.email ? ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
 
   const loadAppointments = useCallback(async () => {
     const { data: session } = await supabase.auth.getSession();
@@ -195,6 +195,14 @@ export function AdminPage() {
             </div>
           </Link>
           <div className="flex items-center gap-2 sm:gap-4">
+            {isSuperadmin && (
+              <button
+                onClick={() => navigate('/superadmin')}
+                className="hidden rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-200 transition hover:bg-amber-400/10 sm:inline-flex"
+              >
+                Maintenance
+              </button>
+            )}
             <span className="hidden items-center gap-1.5 text-xs text-amber-200/70 sm:inline-flex">
               <ShieldCheck className="h-4 w-4" /> {user?.email}
             </span>
