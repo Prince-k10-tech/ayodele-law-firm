@@ -57,6 +57,7 @@ export function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [adminView, setAdminView] = useState(false);
 
   const isAdmin = role === 'admin' || role === 'superadmin' || (user?.email ? ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
 
@@ -96,6 +97,10 @@ export function AdminPage() {
     }
     setFetching(false);
   }, [loadAppointments, loadCases]);
+
+  useEffect(() => {
+    setAdminView(sessionStorage.getItem('ko_admin_view') === 'superadmin-test');
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -163,7 +168,13 @@ export function AdminPage() {
     loadCases();
   };
 
+  const handleReturnToSuperadmin = () => {
+    sessionStorage.removeItem('ko_admin_view');
+    navigate('/superadmin');
+  };
+
   const handleSignOut = async () => {
+    sessionStorage.removeItem('ko_admin_view');
     await signOut();
     navigate('/');
   };
@@ -185,6 +196,14 @@ export function AdminPage() {
 
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100">
+      {adminView && (
+        <div className="sticky top-0 z-50 border-b border-amber-400/30 bg-amber-500/10 px-4 py-2.5 text-center text-xs text-amber-100 backdrop-blur">
+          <span className="font-semibold">ADMIN VIEW — Testing as Administrator</span>
+          <button onClick={handleReturnToSuperadmin} className="ml-3 rounded-md border border-amber-300/30 px-2.5 py-1 text-amber-200 hover:bg-amber-400/10">
+            Return to Superadmin
+          </button>
+        </div>
+      )}
       <header className="sticky top-0 z-20 border-b border-white/10 bg-stone-950/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3 sm:px-6 sm:py-4">
           <Link to="/" className="flex items-center gap-2 sm:gap-3">
