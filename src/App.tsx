@@ -5,13 +5,14 @@ import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { AdminPage } from '@/pages/AdminPage';
+import { SuperadminPage } from '@/pages/SuperadminPage';
 import { ApprovePage } from '@/pages/ApprovePage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { DeviceVerifyPage } from '@/pages/DeviceVerifyPage';
 import { FirmProfilePage } from '@/pages/FirmProfilePage';
+
 function Routes() {
   const { path } = useRouter();
-
   const clean = path.replace(/^\/+/, '') || 'home';
 
   if (clean.startsWith('login')) return <LoginPage />;
@@ -20,6 +21,7 @@ function Routes() {
   if (clean.startsWith('device-verify')) return <DeviceVerifyPage />;
   if (clean.startsWith('firm-profile')) return <FirmProfilePage />;
   if (clean.startsWith('approve')) return <ApprovePage />;
+  if (clean.startsWith('superadmin')) return <SuperadminPage />;
   if (clean.startsWith('admin')) return <AdminPage />;
   if (clean.startsWith('dashboard')) return <DashboardPage />;
   return <HomePage />;
