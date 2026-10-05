@@ -15,6 +15,8 @@ type AuthContextValue = {
   isDeviceTrusted: () => Promise<boolean>;
   registerCurrentDevice: () => Promise<void>;
   isAdmin: boolean;
+  isSuperadmin: boolean;
+  role: 'superadmin' | 'admin' | 'user';
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -157,7 +159,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const isAdmin = isAdminEmail(session?.user?.email);
+  const role = (session?.user?.app_metadata?.role === 'superadmin' || session?.user?.app_metadata?.role === 'admin'
+    ? session.user.app_metadata.role
+    : isAdminEmail(session?.user?.email)
+      ? 'admin'
+      : 'user') as 'superadmin' | 'admin' | 'user';
+  const isSuperadmin = role === 'superadmin';
+  const isAdmin = role === 'superadmin' || role === 'admin';
 
   return (
     <AuthContext.Provider
@@ -173,6 +181,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isDeviceTrusted,
         registerCurrentDevice,
         isAdmin,
+        isSuperadmin,
+        role,
       }}
     >
       {children}
