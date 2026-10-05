@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const ADMIN_EMAILS = ["koayodeleandco@gmail.com", "iretomiwadada780@gmail.com"];
+const OWNER_ADMIN_EMAIL = "koayodeleandco@gmail.com";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -17,9 +17,7 @@ Deno.serve(async (req: Request) => {
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "");
-    if (!token) {
-      return jsonResponse(401, { error: "Authentication required" });
-    }
+    if (!token) return jsonResponse(401, { error: "Authentication required" });
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -28,20 +26,22 @@ Deno.serve(async (req: Request) => {
     );
 
     const { data: userData, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !userData?.user) {
-      return jsonResponse(401, { error: "Invalid session" });
-    }
-    const callerEmail = userData.user.email ?? "";
-    if (!ADMIN_EMAILS.includes(callerEmail.toLowerCase())) {
-      return jsonResponse(403, { error: "Access denied. Admins only." });
-    }
+    if (userErr || !userData?.user) return jsonResponse(401, { error: "Invalid session" });
+
+    const user = userData.user;
+    const role = user.app_metadata?.role;
+    const isAuthorized =
+      role === "admin" ||
+      role === "superadmin" ||
+      user.email?.toLowerCase() === OWNER_ADMIN_EMAIL;
+
+    if (!isAuthorized) return jsonResponse(403, { error: "Access denied. Admins only." });
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // GET — list all case submissions
     if (req.method === "GET") {
       const { data, error } = await adminClient
         .from("case_submissions")
@@ -51,37 +51,21 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(200, { cases: data });
     }
 
-    // POST — mark viewed or approve
     if (req.method === "POST") {
       const body = await req.json();
       const { caseId, action } = body as { caseId: string; action: "view" | "approve" };
 
-      if (!caseId || !action) {
-        return jsonResponse(400, { error: "caseId and action are required" });
-      }
-      if (action !== "view" && action !== "approve") {
-        return jsonResponse(400, { error: "action must be 'view' or 'approve'" });
-      }
+      if (!caseId || !action) return jsonResponse(400, { error: "caseId and action are required" });
+      if (action !== "view" && action !== "approve") return jsonResponse(400, { error: "action must be 'view' or 'approve'" });
 
-      // "view" sets status to "viewed" only if currently "submitted"
-      // "approve" sets status to "approved"
       const newStatus = action === "view" ? "viewed" : "approved";
+      const query = adminClient.from("case_submissions").update({ status: newStatus }).eq("id", caseId);
 
-      const query = adminClient
-        .from("case_submissions")
-        .update({ status: newStatus })
-        .eq("id", caseId);
-
-      // Only transition from submitted → viewed (don't downgrade approved back to viewed)
-      if (action === "view") {
-        query.eq("status", "submitted");
-      }
+      if (action === "view") query.eq("status", "submitted");
 
       const { data: updated, error: updateErr } = await query.select("*").maybeSingle();
-
       if (updateErr) return jsonResponse(500, { error: updateErr.message });
 
-      // For "view", if no row was updated it may already be viewed or approved — fetch current
       if (action === "view" && !updated) {
         const { data: existing } = await adminClient
           .from("case_submissions")
@@ -93,12 +77,9 @@ Deno.serve(async (req: Request) => {
 
       if (!updated) return jsonResponse(404, { error: "Case not found" });
 
-      // Send client notification email on approval
       if (action === "approve") {
         const resendApiKey = Deno.env.get("RESEND_API_KEY");
-        if (resendApiKey && updated.email) {
-          await sendClientCaseNotification(updated, resendApiKey);
-        }
+        if (resendApiKey && updated.email) await sendClientCaseNotification(updated, resendApiKey);
       }
 
       return jsonResponse(200, { case: updated });
@@ -106,7 +87,7 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse(405, { error: "Method not allowed" });
   } catch (err) {
-    return jsonResponse(500, { error: err.message });
+    return jsonResponse(500, { error: err instanceof Error ? err.message : "Internal server error" });
   }
 
   function jsonResponse(status: number, body: unknown) {
@@ -154,10 +135,7 @@ async function sendClientCaseNotification(c: CaseSubmission, apiKey: string) {
 
   await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       from: "K.O Ayodele & Co <cases@resend.dev>",
       to: c.email,
@@ -168,10 +146,5 @@ async function sendClientCaseNotification(c: CaseSubmission, apiKey: string) {
 }
 
 function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
