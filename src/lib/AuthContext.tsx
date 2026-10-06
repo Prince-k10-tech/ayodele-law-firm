@@ -32,22 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      (async () => {
-        setSession(newSession);
-        if (newSession?.user) {
-          // Register or update device on each login
-          try {
-            const fp = getDeviceFingerprint();
-            const { error } = await supabase.rpc('register_device', {
-              p_fingerprint: fp,
-              p_label: navigator.userAgent.slice(0, 80),
-            });
-            if (error) console.warn('Device registration failed:', error.message);
-          } catch {
-            // non-blocking
-          }
-        }
-      })();
+      setSession(newSession);
     });
 
     return () => sub.subscription.unsubscribe();
@@ -57,8 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
 
-    // After successful password auth, check device trust
-    if (data.user && !isAdminEmail(data.user.email)) {
+    // After successful password auth, require a trusted device for every account, including admins.
+    if (data.user) {
       try {
         const fp = getDeviceFingerprint();
         const { data: trusted } = await supabase.rpc('is_device_trusted', { p_fingerprint: fp });
@@ -70,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             body: JSON.stringify({
               email: data.user.email,
               app_url: window.location.origin,
+              fingerprint: fp,
+              device_label: navigator.userAgent.slice(0, 80),
             }),
           });
           // Sign the user out — they need to confirm from the email
@@ -80,7 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
         }
       } catch {
-        // If device check fails, allow login (fail open for usability)
+        await supabase.auth.signOut();
+        return { error: 'Unable to verify this device. Please try again.' };
       }
     }
 
