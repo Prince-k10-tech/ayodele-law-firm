@@ -191,8 +191,7 @@ export function DashboardPage() {
         setCaseError('Could not upload the file: ' + upErr.message);
         return;
       }
-      const { data: pub } = supabase.storage.from('case-files').getPublicUrl(path);
-      fileUrl = pub.publicUrl;
+      fileUrl = path;
       fileName = caseFile.name;
     }
 
