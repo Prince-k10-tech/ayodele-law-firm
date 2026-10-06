@@ -47,8 +47,10 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(400, { error: "A valid phone number is required" });
     }
 
-    // Generate 6-digit OTP
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate a cryptographically secure 6-digit OTP.
+    const bytes = new Uint32Array(1);
+    crypto.getRandomValues(bytes);
+    const code = (100000 + (bytes[0] % 900000)).toString();
 
     // Hash the code for storage
     const encoder = new TextEncoder();
