@@ -1,4 +1,4 @@
-project_id = "mydyesohbbmoyrausgvn"
+project_id = "gvmxysmxlzxcndcfyrbv"
 
 [functions.notify-appointment]
 verify_jwt = true
@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.device-verify]
 verify_jwt = false
+
+[functions.admin-context]
+verify_jwt = true
