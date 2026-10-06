@@ -50,6 +50,18 @@ Deno.serve(async (req: Request) => {
     const { data: authUser, error: authErr } = await userClient.auth.getUser();
     if (authErr || !authUser.user) return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const tokenHeader = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (!tokenHeader) return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const userClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: `Bearer ${tokenHeader}` } } },
+    );
+    const { data: authUser, error: authErr } = await userClient.auth.getUser();
+    if (authErr || !authUser.user) return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
     if (!payload?.appointment_id) {
       return new Response(JSON.stringify({ error: "Missing required appointment fields" }), {
         status: 400,
