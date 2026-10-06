@@ -64,11 +64,20 @@ Deno.serve(async (req: Request) => {
         .from("appointments")
         .update({ status: newStatus })
         .eq("id", appointmentId)
+        .eq("status", "pending")
         .select("*")
         .maybeSingle();
 
       if (updateErr) return jsonResponse(500, { error: updateErr.message });
-      if (!updated) return jsonResponse(404, { error: "Appointment not found" });
+      if (!updated) {
+        const { data: existing } = await adminClient
+          .from("appointments")
+          .select("id, status")
+          .eq("id", appointmentId)
+          .maybeSingle();
+        if (!existing) return jsonResponse(404, { error: "Appointment not found" });
+        return jsonResponse(409, { error: "Appointment is already " + existing.status + "." });
+      }
 
       const resendApiKey = Deno.env.get("RESEND_API_KEY");
       if (resendApiKey && updated.email) await sendClientNotification(updated, action, resendApiKey);
