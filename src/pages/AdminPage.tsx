@@ -41,6 +41,7 @@ type CaseSubmission = {
   case_summary: string | null;
   file_url: string | null;
   file_name: string | null;
+  signed_file_url?: string | null;
   status: string;
   created_at: string;
 };
@@ -369,8 +370,8 @@ export function AdminPage() {
                             <p className="text-sm whitespace-pre-wrap text-stone-400">{c.case_summary}</p>
                           </div>
                         )}
-                        {c.file_name && c.file_url && (
-                          <a href={c.file_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-amber-200 transition hover:bg-amber-500/10">
+                        {c.file_name && (c.signed_file_url || c.file_url) && (
+                          <a href={c.signed_file_url || '#'} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-amber-200 transition hover:bg-amber-500/10">
                             <Download className="h-3.5 w-3.5" />
                             {c.file_name}
                           </a>
