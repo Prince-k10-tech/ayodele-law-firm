@@ -52,7 +52,27 @@ Deno.serve(async (req: Request) => {
       const email = userData.user?.email ?? "";
 
       if (action === "confirm") {
-        // Mark token as consumed (device is now confirmed/trusted)
+        const { data: otpDetails, error: detailsErr } = await adminClient
+          .from("otp_codes")
+          .select("device_fingerprint, device_label")
+          .eq("id", otpRow.id)
+          .single();
+        if (detailsErr || !otpDetails?.device_fingerprint) {
+          return jsonResponse(400, { error: "This verification link is missing device information. Please request a new login verification." });
+        }
+
+        const { error: deviceErr } = await adminClient
+          .from("user_devices")
+          .upsert({
+            user_id: otpRow.user_id,
+            fingerprint: otpDetails.device_fingerprint,
+            label: otpDetails.device_label,
+            trusted_at: new Date().toISOString(),
+            blocked_at: null,
+            last_seen_at: new Date().toISOString(),
+          }, { onConflict: "user_id,fingerprint" });
+        if (deviceErr) return jsonResponse(500, { error: "Could not trust this device." });
+
         await adminClient
           .from("otp_codes")
           .update({ consumed_at: new Date().toISOString() })
@@ -66,7 +86,26 @@ Deno.serve(async (req: Request) => {
       }
 
       if (action === "deny") {
-        // Mark token as consumed and block the device
+        const { data: otpDetails } = await adminClient
+          .from("otp_codes")
+          .select("device_fingerprint, device_label")
+          .eq("id", otpRow.id)
+          .single();
+
+        if (otpDetails?.device_fingerprint) {
+          const { error: blockErr } = await adminClient
+            .from("user_devices")
+            .upsert({
+              user_id: otpRow.user_id,
+              fingerprint: otpDetails.device_fingerprint,
+              label: otpDetails.device_label,
+              blocked_at: new Date().toISOString(),
+              trusted_at: null,
+              last_seen_at: new Date().toISOString(),
+            }, { onConflict: "user_id,fingerprint" });
+          if (blockErr) return jsonResponse(500, { error: "Could not block this device." });
+        }
+
         await adminClient
           .from("otp_codes")
           .update({ consumed_at: new Date().toISOString() })
@@ -120,10 +159,15 @@ Deno.serve(async (req: Request) => {
     if (req.method === "POST") {
       // Send device verification email to the user
       const body = await req.json();
-      const { email, app_url } = body as { email?: string; app_url?: string };
+      const { email, app_url, fingerprint, device_label } = body as {
+        email?: string;
+        app_url?: string;
+        fingerprint?: string;
+        device_label?: string;
+      };
 
-      if (!email) {
-        return jsonResponse(400, { error: "Email is required" });
+      if (!email || !fingerprint || fingerprint.trim().length < 8) {
+        return jsonResponse(400, { error: "Email and valid device information are required" });
       }
 
       // Find the user
@@ -163,6 +207,8 @@ Deno.serve(async (req: Request) => {
         purpose: "device_verification",
         expires_at: expiresAt,
         attempts: 0,
+        device_fingerprint: fingerprint.trim().slice(0, 255),
+        device_label: device_label?.slice(0, 160) ?? null,
       });
 
       // Send verification email with "I'm the one" button
