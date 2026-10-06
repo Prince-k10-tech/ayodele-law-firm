@@ -38,7 +38,19 @@ Deno.serve(async (req: Request) => {
   try {
     const payload: AppointmentPayload = await req.json();
 
-    if (!payload?.appointment_id || !payload?.case_subject || !payload?.preferred_date || !payload?.preferred_time) {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const tokenHeader = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (!tokenHeader) return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const userClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: `Bearer ${tokenHeader}` } } },
+    );
+    const { data: authUser, error: authErr } = await userClient.auth.getUser();
+    if (authErr || !authUser.user) return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    if (!payload?.appointment_id) {
       return new Response(JSON.stringify({ error: "Missing required appointment fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -53,19 +65,22 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Fetch the approval token for this appointment
+    // Load the appointment server-side and verify the caller owns it.
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
-    const { data: appt } = await supabase
+    const { data: appt, error: apptErr } = await supabase
       .from("appointments")
-      .select("approval_token")
+      .select("*")
       .eq("id", payload.appointment_id)
+      .eq("user_id", authUser.user.id)
       .maybeSingle();
+    if (apptErr) return new Response(JSON.stringify({ error: apptErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!appt) return new Response(JSON.stringify({ error: "Appointment not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const token = appt?.approval_token as string | undefined;
-    const baseUrl = payload.app_url || Deno.env.get("APP_URL") || "";
+    const token = appt.approval_token as string | undefined;
+    const baseUrl = Deno.env.get("APP_URL") || new URL(req.url).origin;
     const approveUrl = token
       ? `${baseUrl}/#/approve?token=${token}&action=confirm`
       : `${baseUrl}/#/admin`;
@@ -73,7 +88,7 @@ Deno.serve(async (req: Request) => {
       ? `${baseUrl}/#/approve?token=${token}&action=cancel`
       : `${baseUrl}/#/admin`;
 
-    const dateFormatted = new Date(payload.preferred_date).toLocaleDateString("en-GB", {
+    const dateFormatted = new Date(appt.preferred_date).toLocaleDateString("en-GB", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -88,13 +103,13 @@ Deno.serve(async (req: Request) => {
         </div>
         <p style="font-size: 15px;">A client has requested an appointment. Please review and approve or cancel at your earliest convenience.</p>
         <table style="width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 14px;">
-          <tr><td style="padding: 10px 0; color: #78716c; width: 140px;">Client Name</td><td style="padding: 10px 0; font-weight: 600;">${escapeHtml(payload.full_name)}</td></tr>
-          <tr><td style="padding: 10px 0; color: #78716c;">Email</td><td style="padding: 10px 0;">${escapeHtml(payload.email)}</td></tr>
-          <tr><td style="padding: 10px 0; color: #78716c;">Subject</td><td style="padding: 10px 0; font-weight: 600;">${escapeHtml(payload.case_subject)}</td></tr>
+          <tr><td style="padding: 10px 0; color: #78716c; width: 140px;">Client Name</td><td style="padding: 10px 0; font-weight: 600;">${escapeHtml(appt.full_name)}</td></tr>
+          <tr><td style="padding: 10px 0; color: #78716c;">Email</td><td style="padding: 10px 0;">${escapeHtml(appt.email)}</td></tr>
+          <tr><td style="padding: 10px 0; color: #78716c;">Subject</td><td style="padding: 10px 0; font-weight: 600;">${escapeHtml(appt.case_subject)}</td></tr>
           <tr><td style="padding: 10px 0; color: #78716c;">Preferred Date</td><td style="padding: 10px 0;">${dateFormatted}</td></tr>
-          <tr><td style="padding: 10px 0; color: #78716c;">Preferred Time</td><td style="padding: 10px 0;">${payload.preferred_time}</td></tr>
+          <tr><td style="padding: 10px 0; color: #78716c;">Preferred Time</td><td style="padding: 10px 0;">${appt.preferred_time}</td></tr>
         </table>
-        ${payload.case_details ? `<p style="font-size: 14px; color: #44403c;"><strong>Details:</strong><br/>${escapeHtml(payload.case_details)}</p>` : ""}
+        ${appt.case_details ? `<p style="font-size: 14px; color: #44403c;"><strong>Details:</strong><br/>${escapeHtml(appt.case_details)}</p>` : ""}
         <div style="text-align: center; margin: 32px 0;">
           <a href="${approveUrl}" style="display: inline-block; background: linear-gradient(135deg, #34d399, #059669); color: #022c22; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 14px; margin-right: 12px;">Approve</a>
           <a href="${cancelUrl}" style="display: inline-block; background: linear-gradient(135deg, #f87171, #dc2626); color: #ffffff; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 14px;">Cancel</a>
@@ -120,9 +135,9 @@ Deno.serve(async (req: Request) => {
           body: JSON.stringify({
             from: "K.O Ayodele & Co <appointments@resend.dev>",
             to,
-            subject: `New Appointment Request — ${payload.case_subject}`,
+            subject: `New Appointment Request — ${appt.case_subject}`,
             html,
-            reply_to: payload.email,
+            reply_to: appt.email,
           }),
         })
       ),
