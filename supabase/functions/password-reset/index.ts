@@ -39,6 +39,10 @@ Deno.serve(async (req: Request) => {
     // Step 1: Request reset — check if email exists, send a reset link email
     if (body.email && !body.token && !body.new_password) {
       const email = body.email.toLowerCase().trim();
+      const resendApiKey = Deno.env.get("RESEND_API_KEY");
+      if (!resendApiKey) {
+        return jsonResponse(503, { error: "Password reset email is not configured yet. Please contact the firm." });
+      }
 
       // Check if user exists in auth.users
       const { data: userList, error: userErr } = await adminClient.auth.admin.listUsers();
@@ -99,7 +103,6 @@ Deno.serve(async (req: Request) => {
       });
 
       // Send reset email
-      const resendApiKey = Deno.env.get("RESEND_API_KEY");
       if (resendApiKey) {
         const appUrl = Deno.env.get("APP_URL") || "";
         const resetUrl = `${appUrl}/#/forgot-password?token=${resetToken}&step=reset`;
@@ -125,7 +128,7 @@ Deno.serve(async (req: Request) => {
           </div>
         `;
 
-        await fetch("https://api.resend.com/emails", {
+        const emailResponse = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${resendApiKey}`,
@@ -138,6 +141,10 @@ Deno.serve(async (req: Request) => {
             html,
           }),
         });
+        if (!emailResponse.ok) {
+          await adminClient.from("otp_codes").delete().eq("user_id", user.id).eq("purpose", "password_reset").eq("code_hash", tokenHash).is("consumed_at", null);
+          return jsonResponse(502, { error: "The email provider could not deliver the reset message. Please try again later." });
+        }
       }
 
       return jsonResponse(200, {
