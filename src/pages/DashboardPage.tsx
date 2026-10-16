@@ -132,6 +132,7 @@ export function DashboardPage() {
         case_details: apptDetails,
         preferred_date: apptDate,
         preferred_time: apptTime,
+        status: 'pending',
       })
       .select('id')
       .single();
@@ -468,7 +469,13 @@ export function DashboardPage() {
                               : 'bg-amber-500/20 text-amber-300'
                           }`}
                         >
-                          {a.status}
+                          {({
+                            pending: 'Pending',
+                            confirmed: 'Confirmed',
+                            rescheduled: 'Rescheduled',
+                            cancelled: 'Cancelled',
+                            rejected: 'Rejected',
+                          } as Record<string, string>)[a.status] ?? a.status}
                         </span>
                       </div>
                     </li>
