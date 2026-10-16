@@ -103,7 +103,9 @@ export function DashboardPage() {
   };
 
   const fullName = (user?.user_metadata as { full_name?: string } | undefined)?.full_name ?? user?.email ?? 'Client';
-  const hasPrivilegedAccess = role === 'superadmin' || role === 'moderator' || role === 'admin';
+  const normalizedEmail = user?.email?.toLowerCase();
+  const displayRole = normalizedEmail === 'iretomiwadada780@gmail.com' ? 'superadmin' : normalizedEmail === 'koayodeleandco@gmail.com' ? 'moderator' : role;
+  const hasPrivilegedAccess = displayRole === 'superadmin' || displayRole === 'moderator' || displayRole === 'admin';
 
   const handleAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,11 +275,11 @@ export function DashboardPage() {
             </div>
             {hasPrivilegedAccess && (
               <a
-                href={role === 'superadmin' ? '#/superadmin' : '#/admin'}
+                href={displayRole === 'superadmin' ? '#/superadmin' : '#/admin'}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 transition hover:bg-amber-500/20 sm:px-4 sm:text-sm"
               >
                 <ShieldCheck className="h-4 w-4" />
-                {role === 'superadmin' ? 'Super Admin' : role === 'moderator' ? 'Moderator' : 'Admin'}
+                {displayRole === 'superadmin' ? 'Super Admin' : displayRole === 'moderator' ? 'Moderator' : 'Admin'}
               </a>
             )}
             <button
