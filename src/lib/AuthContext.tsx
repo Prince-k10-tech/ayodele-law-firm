@@ -16,7 +16,7 @@ type AuthContextValue = {
   registerCurrentDevice: () => Promise<void>;
   isAdmin: boolean;
   isSuperadmin: boolean;
-  role: 'superadmin' | 'admin' | 'user';
+  role: 'superadmin' | 'moderator' | 'admin' | 'user';
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -171,11 +171,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const role = (session?.user?.app_metadata?.role === 'superadmin' || session?.user?.app_metadata?.role === 'admin'
-    ? session.user.app_metadata.role
-    : isAdminEmail(session?.user?.email)
-      ? 'admin'
-      : 'user') as 'superadmin' | 'admin' | 'user';
+  const appRole = session?.user?.app_metadata?.role;
+  const role = (appRole === 'superadmin' || appRole === 'moderator' || appRole === 'admin'
+    ? appRole
+    : session?.user?.email?.toLowerCase() === 'koayodeleandco@gmail.com'
+      ? 'moderator'
+      : isAdminEmail(session?.user?.email)
+        ? 'admin'
+        : 'user') as 'superadmin' | 'moderator' | 'admin' | 'user';
   const isSuperadmin = role === 'superadmin';
   const isAdmin = role === 'superadmin' || role === 'admin';
 
