@@ -7,9 +7,8 @@ type AuthContextValue = {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null; needsDeviceVerification?: boolean }>;
+  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, fullName: string, phone: string) => Promise<{ error: string | null }>;
-  resendEmailConfirmation: (email: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   verifyOtp: (code: string, purpose?: string) => Promise<{ error: string | null }>;
   sendOtp: (phone: string) => Promise<{ error: string | null; deliveredVia?: string }>;
@@ -61,36 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     if (!isSupabaseConfigured) return { error: 'Sign-in is temporarily unavailable because the authentication service has not been configured for this deployment.' };
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
-
-    // After successful password auth, check device trust
-    if (data.user && !isAdminEmail(data.user.email)) {
-      try {
-        const fp = getDeviceFingerprint();
-        const { data: trusted } = await supabase.rpc('is_device_trusted', { p_fingerprint: fp });
-        if (!trusted) {
-          // New device — send verification email
-          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/device-verify`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
-            body: JSON.stringify({
-              email: data.user.email,
-              app_url: window.location.origin,
-            }),
-          });
-          // Sign the user out — they need to confirm from the email
-          await supabase.auth.signOut();
-          return {
-            error: null,
-            needsDeviceVerification: true,
-          };
-        }
-      } catch {
-        // If device check fails, allow login (fail open for usability)
-      }
-    }
-
     return { error: null };
   };
 
@@ -101,28 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: { full_name: fullName, phone },
-        // Return users to this app after they confirm their email.
         emailRedirectTo: `${window.location.origin}${window.location.pathname}`,
       },
     });
     if (error) return { error: error.message };
-
-    // The database creates the matching profile with a SECURITY DEFINER trigger.
-    // Do not insert from the browser: email-confirmation signups may not have a session yet,
-    // so an authenticated-only RLS insert would fail even though Auth account creation succeeded.
+    if (!data.session) return { error: 'Account created, but this Supabase project still requires email confirmation. Disable Confirm Email in the connected project to allow immediate sign-in.' };
     return { error: null };
-  };
-
-  const resendEmailConfirmation = async (email: string) => {
-    if (!isSupabaseConfigured) return { error: 'Email verification is unavailable until authentication is configured.' };
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: email.trim(),
-      options: {
-        emailRedirectTo: `${window.location.origin}${window.location.pathname}`,
-      },
-    });
-    return { error: error?.message ?? null };
   };
 
   const signOut = async () => {
@@ -199,7 +154,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         signIn,
         signUp,
-        resendEmailConfirmation,
         signOut,
         verifyOtp,
         sendOtp,
