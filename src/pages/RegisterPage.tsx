@@ -57,8 +57,7 @@ export function RegisterPage() {
           </Link>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
-            <>
-                <h2 className="text-center text-2xl font-semibold text-stone-50">Create your account</h2>
+            <h2 className="text-center text-2xl font-semibold text-stone-50">Create your account</h2>
                 <p className="mt-2 text-center text-sm text-stone-400">
                   Register to book appointments and submit case details.
                 </p>
@@ -83,7 +82,7 @@ export function RegisterPage() {
                       <input id="phone" type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+234 801 234 5678"
                         className="w-full rounded-lg border border-white/10 bg-stone-900/50 px-4 py-3 pl-10 text-sm text-stone-100 placeholder-stone-500 outline-none transition focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20" />
                     </div>
-                    <p className="mt-1.5 text-[11px] text-stone-500">Used for account contact. Email is the only verification method currently available.</p>
+                    <p className="mt-1.5 text-[11px] text-stone-500">Used for account contact.</p>
                   </div>
 
                   <div>
@@ -101,8 +100,6 @@ export function RegisterPage() {
                     {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Account'}
                   </Button>
                 </form>
-              </>
-</>}
 
             <p className="mt-6 text-center text-sm text-stone-400">
               Already have an account? <Link to="/login" className="font-medium text-amber-300 underline-offset-4 hover:underline">Login here</Link>
