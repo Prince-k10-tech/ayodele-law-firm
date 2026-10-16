@@ -51,7 +51,10 @@ export function AccountSetupPage() {
       return;
     }
     setNotice('Your password is set. Your client portal is ready.');
-    window.setTimeout(() => navigate('/dashboard'), 900);
+    window.setTimeout(() => {
+      window.history.replaceState({}, '', window.location.pathname + '#/dashboard');
+      navigate('/dashboard');
+    }, 900);
   };
 
   return (
