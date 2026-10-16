@@ -118,7 +118,7 @@ export function AdminPage() {
     loadAll();
   }, [user, loading, isAdmin, navigate, loadAll]);
 
-  const handleAppointmentAction = async (id: string, action: 'confirm' | 'cancel') => {
+  const handleAppointmentAction = async (id: string, action: 'confirm' | 'cancel' | 'reschedule', newDate?: string, newTime?: string) => {
     setActioningId(id);
     setNotice(null);
     const { data: session } = await supabase.auth.getSession();
@@ -128,7 +128,7 @@ export function AdminPage() {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session?.session?.access_token ?? ''}`,
       },
-      body: JSON.stringify({ appointmentId: id, action }),
+      body: JSON.stringify({ appointmentId: id, action, newDate, newTime }),
     });
     setActioningId(null);
     if (!res.ok) {
@@ -138,13 +138,15 @@ export function AdminPage() {
     }
     setNotice(
       action === 'confirm'
-        ? 'Appointment confirmed. A confirmation email has been sent to the client.'
-        : 'Appointment cancelled. The client has been notified.',
+        ? 'Appointment confirmed. The client has been notified.'
+        : action === 'reschedule'
+          ? 'Appointment rescheduled. The client has been notified of the proposed new date and time.'
+          : 'Appointment rejected. The client has been notified.',
     );
     loadAppointments();
   };
 
-  const handleCaseAction = async (id: string, action: 'view' | 'approve') => {
+  const handleCaseAction = async (id: string, action: 'view' | 'approve' | 'reject') => {
     setActioningId(id);
     setNotice(null);
     const { data: session } = await supabase.auth.getSession();
@@ -165,7 +167,9 @@ export function AdminPage() {
     setNotice(
       action === 'view'
         ? 'Case marked as viewed. The client will see "Viewed" on their dashboard.'
-        : 'Case approved. The client has been notified that their case is being processed.',
+        : action === 'approve'
+          ? 'Case approved. The client has been notified that their case is being processed.'
+          : 'Case rejected. The client has been notified.',
     );
     loadCases();
   };
@@ -331,6 +335,15 @@ export function AdminPage() {
                             <XCircle className="h-4 w-4" />
                             Cancel
                           </button>
+                          <button onClick={() => {
+                            const newDate = window.prompt('Enter the proposed new date (YYYY-MM-DD)', a.preferred_date);
+                            if (!newDate) return;
+                            const newTime = window.prompt('Enter the proposed new time (HH:MM, 24-hour)', a.preferred_time.slice(0, 5));
+                            if (!newTime) return;
+                            void handleAppointmentAction(a.id, 'reschedule', newDate, newTime);
+                          }} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-sky-400/30 bg-sky-900/20 px-4 py-2.5 text-sm font-medium text-sky-200 transition hover:bg-sky-800/40 disabled:opacity-50">
+                            <Clock className="h-4 w-4" /> Reschedule
+                          </button>
                         </div>
                       )}
                     </div>
@@ -402,13 +415,18 @@ export function AdminPage() {
                               <CheckCircle2 className="h-4 w-4" />
                               Approve
                             </button>
+                            <button onClick={() => handleCaseAction(c.id, 'reject')} disabled={actioningId === c.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-400/30 bg-red-900/20 px-4 py-2.5 text-sm font-medium text-red-200 transition hover:bg-red-800/40 disabled:opacity-50">
+                              <XCircle className="h-4 w-4" /> Reject
+                            </button>
                           </>
                         )}
                         {c.status === 'viewed' && (
-                          <button onClick={() => handleCaseAction(c.id, 'approve')} disabled={actioningId === c.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-4 py-2.5 text-sm font-medium text-emerald-950 shadow transition hover:shadow-lg disabled:opacity-50">
-                            {actioningId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                            Approve Case
-                          </button>
+                          <>
+                            <button onClick={() => handleCaseAction(c.id, 'approve')} disabled={actioningId === c.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-4 py-2.5 text-sm font-medium text-emerald-950 shadow transition hover:shadow-lg disabled:opacity-50">
+                              {actioningId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Approve Case
+                            </button>
+                            <button onClick={() => handleCaseAction(c.id, 'reject')} disabled={actioningId === c.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-400/30 bg-red-900/20 px-4 py-2.5 text-sm font-medium text-red-200 transition hover:bg-red-800/40 disabled:opacity-50"><XCircle className="h-4 w-4" /> Reject</button>
+                          </>
                         )}
                       </div>
                     </div>
