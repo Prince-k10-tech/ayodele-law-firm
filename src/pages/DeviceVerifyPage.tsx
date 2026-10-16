@@ -24,7 +24,7 @@ export function DeviceVerifyPage() {
 
     const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/device-verify?token=${encodeURIComponent(token)}&action=${encodeURIComponent(action)}`;
 
-    fetch(fnUrl)
+    fetch(fnUrl, { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY } })
       .then(async (res) => {
         const body = await res.json();
         if (!res.ok) {
