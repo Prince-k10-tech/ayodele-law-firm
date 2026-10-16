@@ -27,7 +27,7 @@ export function RegisterPage() {
       return;
     }
     if (!phone.trim() || phone.trim().length < 7) {
-      setError('Please enter a valid phone number. It can be used for SMS verification once SMS delivery is enabled.');
+      setError('Please enter a valid phone number for account contact.');
       return;
     }
 
@@ -102,7 +102,7 @@ export function RegisterPage() {
                       <input id="phone" type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+234 801 234 5678"
                         className="w-full rounded-lg border border-white/10 bg-stone-900/50 px-4 py-3 pl-10 text-sm text-stone-100 placeholder-stone-500 outline-none transition focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20" />
                     </div>
-                    <p className="mt-1.5 text-[11px] text-stone-500">Used for account contact and future SMS verification. SMS delivery must be configured before it can be offered as a working verification method.</p>
+                    <p className="mt-1.5 text-[11px] text-stone-500">Used for account contact. Email is the only verification method currently available.</p>
                   </div>
 
                   <div>
@@ -114,7 +114,6 @@ export function RegisterPage() {
                   <div className="rounded-lg border border-amber-400/20 bg-amber-900/10 p-3 text-sm text-amber-100">
                     <div className="flex items-center gap-2 font-medium"><Mail className="h-4 w-4" /> Verification method: Email link</div>
                     <p className="mt-1 text-xs text-stone-300">After registration, we'll tell you clearly to check your email and provide a resend option.</p>
-                    <p className="mt-2 flex items-center gap-1.5 text-xs text-stone-400"><ShieldCheck className="h-3.5 w-3.5" /> SMS code option will be enabled once an SMS provider is configured.</p>
                   </div>
 
                   {error && <p role="alert" className="rounded-lg border border-red-400/30 bg-red-900/30 px-4 py-2.5 text-sm text-red-200">{error}</p>}
