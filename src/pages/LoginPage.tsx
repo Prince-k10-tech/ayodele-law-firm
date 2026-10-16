@@ -32,13 +32,13 @@ export function LoginPage() {
 
     const { data: authData } = await supabase.auth.getUser();
     const signedInUser = authData.user;
-    const email = signedInUser?.email?.toLowerCase() ?? '';
+    const normalizedEmail = signedInUser?.email?.toLowerCase() ?? '';
     const appRole = signedInUser?.app_metadata?.role;
     const resolvedRole = appRole === 'superadmin' || appRole === 'moderator' || appRole === 'admin'
       ? appRole
-      : email === 'iretomiwadada780@gmail.com'
+      : normalizedEmail === 'iretomiwadada780@gmail.com'
         ? 'superadmin'
-        : email === 'koayodeleandco@gmail.com'
+        : normalizedEmail === 'koayodeleandco@gmail.com'
           ? 'moderator'
           : 'user';
     const next = new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('next');
