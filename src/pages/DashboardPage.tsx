@@ -49,10 +49,8 @@ const CASE_CATEGORIES = [
   'Other',
 ];
 
-const ADMIN_EMAILS = ['koayodeleandco@gmail.com', 'iretomiwadada780@gmail.com'];
-
 export function DashboardPage() {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, role } = useAuth();
   const { navigate } = useRouter();
 
   const [activeTab, setActiveTab] = useState<'appointments' | 'cases'>('appointments');
@@ -105,7 +103,7 @@ export function DashboardPage() {
   };
 
   const fullName = (user?.user_metadata as { full_name?: string } | undefined)?.full_name ?? user?.email ?? 'Client';
-  const isAdmin = user?.email ? ADMIN_EMAILS.includes(user.email.toLowerCase()) : false;
+  const hasPrivilegedAccess = role === 'superadmin' || role === 'moderator' || role === 'admin';
 
   const handleAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,13 +271,13 @@ export function DashboardPage() {
               <p className="text-sm font-medium text-stone-200">{fullName}</p>
               <p className="text-[11px] text-stone-500">{user?.email}</p>
             </div>
-            {isAdmin && (
+            {hasPrivilegedAccess && (
               <a
-                href="#/admin"
+                href={role === 'superadmin' ? '#/superadmin' : '#/admin'}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 transition hover:bg-amber-500/20 sm:px-4 sm:text-sm"
               >
                 <ShieldCheck className="h-4 w-4" />
-                Admin
+                {role === 'superadmin' ? 'Super Admin' : role === 'moderator' ? 'Moderator' : 'Admin'}
               </a>
             )}
             <button
