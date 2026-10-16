@@ -9,6 +9,7 @@ type AuthContextValue = {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null; needsDeviceVerification?: boolean }>;
   signUp: (email: string, password: string, fullName: string, phone: string) => Promise<{ error: string | null }>;
+  resendEmailConfirmation: (email: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   verifyOtp: (code: string, purpose?: string) => Promise<{ error: string | null }>;
   sendOtp: (phone: string) => Promise<{ error: string | null; deliveredVia?: string }>;
@@ -112,6 +113,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
+  const resendEmailConfirmation = async (email: string) => {
+    if (!isSupabaseConfigured) return { error: 'Email verification is unavailable until authentication is configured.' };
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email.trim(),
+      options: {
+        emailRedirectTo: `${window.location.origin}${window.location.pathname}#/login`,
+      },
+    });
+    return { error: error?.message ?? null };
+  };
+
   const signOut = async () => {
     if (!isSupabaseConfigured) return;
     await supabase.auth.signOut();
@@ -186,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         signIn,
         signUp,
+        resendEmailConfirmation,
         signOut,
         verifyOtp,
         sendOtp,
