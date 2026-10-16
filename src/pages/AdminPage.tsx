@@ -14,6 +14,9 @@ import {
   Eye,
   FileText,
   Download,
+  Search,
+  Users,
+  ArrowLeft,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { Link, useRouter } from '@/lib/router';
@@ -51,7 +54,9 @@ const ADMIN_EMAILS = ['koayodeleandco@gmail.com'];
 export function AdminPage() {
   const { user, loading, signOut, isSuperadmin, role } = useAuth();
   const { navigate } = useRouter();
-  const [tab, setTab] = useState<'appointments' | 'cases'>('appointments');
+  const [tab, setTab] = useState<'appointments' | 'cases' | 'clients'>('appointments');
+  const [clientSearch, setClientSearch] = useState('');
+  const [selectedClientEmail, setSelectedClientEmail] = useState<string | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [cases, setCases] = useState<CaseSubmission[]>([]);
   const [fetching, setFetching] = useState(true);
@@ -199,6 +204,20 @@ export function AdminPage() {
   const newCases = cases.filter((c) => c.status === 'submitted');
   const viewedCases = cases.filter((c) => c.status === 'viewed');
   const approvedCases = cases.filter((c) => c.status === 'approved');
+  const clientDirectory = Array.from(new Map(
+    [...appointments.map((a) => ({ full_name: a.full_name, email: a.email })),
+     ...cases.map((c) => ({ full_name: c.full_name, email: c.email }))]
+      .filter((client) => Boolean(client.email))
+      .map((client) => [client.email.toLowerCase(), client])
+  ).values()).map((client) => ({
+    ...client,
+    appointments: appointments.filter((a) => a.email.toLowerCase() === client.email.toLowerCase()),
+    cases: cases.filter((item) => item.email.toLowerCase() === client.email.toLowerCase()),
+  })).sort((a, b) => a.full_name.localeCompare(b.full_name));
+  const filteredClients = clientDirectory.filter((client) =>
+    `${client.full_name} ${client.email}`.toLowerCase().includes(clientSearch.toLowerCase())
+  );
+  const selectedClient = clientDirectory.find((client) => client.email.toLowerCase() === selectedClientEmail?.toLowerCase());
 
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100">
@@ -270,6 +289,13 @@ export function AdminPage() {
             label="Case Presentations"
             badge={newCases.length}
           />
+          <TabButton
+            active={tab === 'clients'}
+            onClick={() => { setTab('clients'); setSelectedClientEmail(null); }}
+            icon={<Users className="h-4 w-4" />}
+            label="Clients"
+            badge={clientDirectory.length}
+          />
         </div>
       </header>
 
@@ -283,6 +309,37 @@ export function AdminPage() {
           <div className="mb-6 rounded-xl border border-emerald-400/30 bg-emerald-900/30 px-5 py-4 text-sm text-emerald-200">
             {notice}
           </div>
+        )}
+
+        {tab === 'clients' && (
+          <section>
+            <div className="mb-6">
+              <h1 className="text-2xl font-semibold text-stone-50 sm:text-3xl">Client Directory</h1>
+              <p className="mt-2 text-sm text-stone-400">Find a client and review their appointments, case submissions, and files in one place.</p>
+            </div>
+            {selectedClient ? (
+              <div>
+                <button onClick={() => setSelectedClientEmail(null)} className="mb-5 inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-stone-300 hover:bg-white/5"><ArrowLeft className="h-4 w-4" /> All clients</button>
+                <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                  <h2 className="text-xl font-semibold">{selectedClient.full_name}</h2>
+                  <p className="mt-1 text-sm text-stone-400">{selectedClient.email}</p>
+                  <div className="mt-4 flex flex-wrap gap-3 text-xs text-stone-300">
+                    <span className="rounded-lg bg-white/5 px-3 py-2">{selectedClient.appointments.length} appointment(s)</span>
+                    <span className="rounded-lg bg-white/5 px-3 py-2">{selectedClient.cases.length} case submission(s)</span>
+                  </div>
+                </div>
+                <h3 className="mb-3 text-lg font-semibold">Appointment history</h3>
+                {selectedClient.appointments.length ? <div className="mb-7 space-y-3">{selectedClient.appointments.map((a) => <article key={a.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-medium">{a.case_subject}</p><p className="mt-1 text-xs text-stone-400">{a.preferred_date} · {a.preferred_time}</p></div><span className="rounded-full bg-white/5 px-2.5 py-1 text-xs">{a.status}</span></div>{a.case_details && <p className="mt-3 whitespace-pre-wrap text-sm text-stone-400">{a.case_details}</p>}</article>)}</div> : <p className="mb-7 text-sm text-stone-500">No appointments on record.</p>}
+                <h3 className="mb-3 text-lg font-semibold">Case submissions and files</h3>
+                {selectedClient.cases.length ? <div className="space-y-3">{selectedClient.cases.map((item) => <article key={item.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-medium">{item.case_title}</p><p className="mt-1 text-xs text-stone-400">{item.case_category || 'General matter'} · {new Date(item.created_at).toLocaleDateString()}</p></div><span className="rounded-full bg-white/5 px-2.5 py-1 text-xs">{item.status}</span></div>{item.case_summary && <p className="mt-3 whitespace-pre-wrap text-sm text-stone-400">{item.case_summary}</p>}{item.file_url && <a href={item.file_url} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-amber-200 hover:bg-white/5"><FileText className="h-4 w-4" />{item.file_name || 'Open client file'}<Download className="h-3.5 w-3.5" /></a>}</article>)}</div> : <p className="text-sm text-stone-500">No case submissions or files on record.</p>}
+              </div>
+            ) : (
+              <>
+                <div className="relative mb-5"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" /><input value={clientSearch} onChange={(e) => setClientSearch(e.target.value)} placeholder="Search clients by name or email..." className="w-full rounded-xl border border-white/10 bg-white/[0.03] py-3 pl-10 pr-4 text-sm text-stone-100 outline-none focus:border-amber-400/40" /></div>
+                {fetching ? <div className="py-16 text-center text-sm text-stone-400">Loading clients…</div> : filteredClients.length ? <div className="grid gap-3 sm:grid-cols-2">{filteredClients.map((client) => <button key={client.email} onClick={() => setSelectedClientEmail(client.email)} className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 text-left transition hover:border-amber-400/30 hover:bg-white/[0.04]"><div className="flex items-start justify-between gap-3"><div><h2 className="font-semibold text-stone-100">{client.full_name || 'Unnamed client'}</h2><p className="mt-1 break-all text-sm text-stone-400">{client.email}</p></div><ArrowLeft className="h-4 w-4 rotate-180 text-stone-500" /></div><div className="mt-4 flex flex-wrap gap-2 text-xs text-stone-300"><span className="rounded-lg bg-white/5 px-2.5 py-1.5">{client.appointments.length} appointments</span><span className="rounded-lg bg-white/5 px-2.5 py-1.5">{client.cases.length} case submissions</span></div><p className="mt-3 text-xs text-amber-200">View client record →</p></button>)}</div> : <div className="rounded-2xl border border-white/10 p-8 text-center text-sm text-stone-400">No clients found in submitted appointment or case records yet.</div>}
+              </>
+            )}
+          </section>
         )}
 
         {tab === 'appointments' && (
