@@ -136,13 +136,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const appRole = session?.user?.app_metadata?.role;
+  const normalizedEmail = session?.user?.email?.toLowerCase();
+  // Trusted initial role mapping while app_metadata is being bootstrapped.
+  // The Edge Functions still enforce authorization server-side.
   const role = (appRole === 'superadmin' || appRole === 'moderator' || appRole === 'admin'
     ? appRole
-    : session?.user?.email?.toLowerCase() === 'koayodeleandco@gmail.com'
-      ? 'moderator'
-      : isAdminEmail(session?.user?.email)
-        ? 'admin'
-        : 'user') as 'superadmin' | 'moderator' | 'admin' | 'user';
+    : normalizedEmail === 'iretomiwadada780@gmail.com'
+      ? 'superadmin'
+      : normalizedEmail === 'koayodeleandco@gmail.com'
+        ? 'moderator'
+        : isAdminEmail(normalizedEmail)
+          ? 'admin'
+          : 'user') as 'superadmin' | 'moderator' | 'admin' | 'user';
   const isSuperadmin = role === 'superadmin';
   const isAdmin = role === 'superadmin' || role === 'moderator' || role === 'admin';
 
