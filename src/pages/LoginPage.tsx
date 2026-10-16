@@ -4,6 +4,7 @@ import { Button } from '@/components/Button';
 import { Logo } from '@/components/Logo';
 import { Link, useRouter } from '@/lib/router';
 import { useAuth } from '@/lib/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export function LoginPage() {
   const { signIn } = useAuth();
@@ -29,8 +30,23 @@ export function LoginPage() {
     }
 
 
+    const { data: authData } = await supabase.auth.getUser();
+    const signedInUser = authData.user;
+    const email = signedInUser?.email?.toLowerCase() ?? '';
+    const appRole = signedInUser?.app_metadata?.role;
+    const resolvedRole = appRole === 'superadmin' || appRole === 'moderator' || appRole === 'admin'
+      ? appRole
+      : email === 'iretomiwadada780@gmail.com'
+        ? 'superadmin'
+        : email === 'koayodeleandco@gmail.com'
+          ? 'moderator'
+          : 'user';
     const next = new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('next');
-    navigate(next === '/admin' ? '/admin' : '/dashboard');
+    if (resolvedRole === 'superadmin' || resolvedRole === 'moderator' || resolvedRole === 'admin') {
+      navigate('/admin');
+    } else {
+      navigate(next === '/account-setup' ? '/account-setup' : '/dashboard');
+    }
   };
 
   return (
