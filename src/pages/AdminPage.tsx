@@ -458,7 +458,7 @@ export function AdminPage() {
                           </div>
                         )}
                         {c.file_name && c.file_url && (
-                          <a href={c.file_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-amber-200 transition hover:bg-amber-500/10">
+                          <a href={c.file_url} target="_blank" rel="noopener noreferrer" onClick={() => { if (c.status === 'submitted') void handleCaseAction(c.id, 'view'); }} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-amber-200 transition hover:bg-amber-500/10">
                             <Download className="h-3.5 w-3.5" />
                             {c.file_name}
                           </a>
