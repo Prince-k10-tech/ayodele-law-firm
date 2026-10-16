@@ -32,6 +32,7 @@ Deno.serve(async (req: Request) => {
     const role = user.app_metadata?.role;
     const isAuthorized =
       role === "admin" ||
+      role === "moderator" ||
       role === "superadmin" ||
       user.email?.toLowerCase() === OWNER_ADMIN_EMAIL;
 
