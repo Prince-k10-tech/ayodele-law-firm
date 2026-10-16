@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Mail } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/Button';
 import { Logo } from '@/components/Logo';
 import { Link, useRouter } from '@/lib/router';
@@ -14,6 +14,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showResend, setShowResend] = useState(false);
 
   const handleResendConfirmation = async () => {
     setError(null);
@@ -36,6 +37,7 @@ export function LoginPage() {
     e.preventDefault();
     setError(null);
     setNotice(null);
+    setShowResend(false);
 
     setSubmitting(true);
     const { error: signInError, needsDeviceVerification } = await signIn(email, password);
@@ -43,6 +45,7 @@ export function LoginPage() {
 
     if (signInError) {
       setError(signInError);
+      setShowResend(/email not confirmed|email address not confirmed|confirm your email/i.test(signInError));
       return;
     }
 
@@ -126,14 +129,16 @@ export function LoginPage() {
               <Button type="submit" variant="gold" fullWidth disabled={submitting}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign In'}
               </Button>
-              <button
-                type="button"
-                onClick={handleResendConfirmation}
-                disabled={submitting}
-                className="w-full text-center text-xs text-amber-300 underline-offset-4 hover:underline disabled:opacity-50"
-              >
-                {submitting ? 'Please wait…' : 'Didn’t receive the confirmation email? Resend it'}
-              </button>
+{showResend && (
+                <button
+                  type="button"
+                  onClick={handleResendConfirmation}
+                  disabled={submitting}
+                  className="w-full text-center text-xs text-amber-300 underline-offset-4 hover:underline disabled:opacity-50"
+                >
+                  {submitting ? 'Please wait…' : 'Didn’t receive the confirmation email? Resend it'}
+                </button>
+              )}
             </form>
 
             <p className="mt-4 text-center text-sm text-stone-400">
