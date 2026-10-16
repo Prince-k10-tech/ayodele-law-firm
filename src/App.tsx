@@ -11,12 +11,14 @@ import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { DeviceVerifyPage } from '@/pages/DeviceVerifyPage';
 import { FirmProfilePage } from '@/pages/FirmProfilePage';
 import { InitialSetupPage } from '@/pages/InitialSetupPage';
+import { AccountSetupPage } from '@/pages/AccountSetupPage';
 
 function Routes() {
   const { path } = useRouter();
   const clean = path.replace(/^\/+/, '') || 'home';
 
   if (clean.startsWith('initial-setup')) return <InitialSetupPage />;
+  if (clean.startsWith('account-setup')) return <AccountSetupPage />;
   if (clean.startsWith('login')) return <LoginPage />;
   if (clean.startsWith('register')) return <RegisterPage />;
   if (clean.startsWith('forgot-password')) return <ForgotPasswordPage />;
