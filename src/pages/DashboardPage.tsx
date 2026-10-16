@@ -157,7 +157,7 @@ export function DashboardPage() {
           case_details: apptDetails,
           preferred_date: apptDate,
           preferred_time: apptTime,
-          app_url: window.location.origin,
+          app_url: `${window.location.origin}/ayodele-law-firm`,
         }),
       });
     } catch {
@@ -235,7 +235,7 @@ export function DashboardPage() {
           case_summary: caseSummary,
           file_url: fileUrl,
           file_name: fileName,
-          app_url: window.location.origin,
+          app_url: `${window.location.origin}/ayodele-law-firm`,
         }),
       });
     } catch {
