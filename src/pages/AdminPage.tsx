@@ -239,12 +239,12 @@ export function AdminPage() {
             </div>
           </Link>
           <div className="flex items-center gap-2 sm:gap-4">
-            {(role === 'superadmin' || role === 'moderator') && (
+            {(role === 'superadmin' || role === 'moderator' || role === 'admin') && (
               <button
                 onClick={() => setShowStaffManagement((current) => !current)}
                 className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-200 transition hover:bg-amber-400/10"
               >
-                {showStaffManagement ? 'Close Staff' : 'Manage Staff'}
+                {showStaffManagement ? 'Close Panel' : role === 'admin' ? 'Client Portals' : 'Manage Staff & Clients'}
               </button>
             )}
             {isSuperadmin && (
@@ -271,7 +271,7 @@ export function AdminPage() {
             </button>
           </div>
         </div>
-        {showStaffManagement && (role === 'superadmin' || role === 'moderator') && (
+        {showStaffManagement && (role === 'superadmin' || role === 'moderator' || role === 'admin') && (
           <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6">
             <StaffManagementPanel role={role} onClose={() => setShowStaffManagement(false)} />
           </div>
