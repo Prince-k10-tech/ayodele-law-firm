@@ -34,7 +34,7 @@ export function ForgotPasswordPage() {
     try {
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/password-reset`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
         body: JSON.stringify({ email }),
       });
       const body = await res.json();
@@ -77,7 +77,7 @@ export function ForgotPasswordPage() {
     try {
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/password-reset`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
         body: JSON.stringify({ token, new_password: newPassword }),
       });
       const body = await res.json();
