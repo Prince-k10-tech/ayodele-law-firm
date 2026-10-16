@@ -2,8 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
-// https://vitejs.dev/config/
+// The repository is hosted under /ayodele-law-firm/ on GitHub Pages.
 export default defineConfig({
+  base: '/ayodele-law-firm/',
   plugins: [react()],
   resolve: {
     alias: {
