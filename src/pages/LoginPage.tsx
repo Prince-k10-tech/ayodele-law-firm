@@ -6,55 +6,28 @@ import { Link, useRouter } from '@/lib/router';
 import { useAuth } from '@/lib/AuthContext';
 
 export function LoginPage() {
-  const { signIn, resendEmailConfirmation } = useAuth();
+  const { signIn } = useAuth();
   const { navigate } = useRouter();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [showResend, setShowResend] = useState(false);
 
-  const handleResendConfirmation = async () => {
-    setError(null);
-    setNotice(null);
-    if (!email.trim()) {
-      setError('Enter your email address first, then request a new confirmation email.');
-      return;
-    }
-    setSubmitting(true);
-    const { error: resendError } = await resendEmailConfirmation(email.trim());
-    setSubmitting(false);
-    if (resendError) {
-      setError(resendError);
-      return;
-    }
-    setNotice(`We've requested a new confirmation email for ${email.trim()}. Check your inbox and Spam/Junk folder, then tap the confirmation link before signing in.`);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setNotice(null);
-    setShowResend(false);
 
     setSubmitting(true);
-    const { error: signInError, needsDeviceVerification } = await signIn(email, password);
+    const { error: signInError } = await signIn(email, password);
     setSubmitting(false);
 
     if (signInError) {
       setError(signInError);
-      setShowResend(/email not confirmed|email address not confirmed|confirm your email/i.test(signInError));
       return;
     }
 
-    if (needsDeviceVerification) {
-      setNotice(
-        'We detected a login from a new device. For your security, we sent a confirmation email to your registered email address. Please open it and click "I\'m the one" to verify this device, then log in again.',
-      );
-      return;
-    }
 
     const next = new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('next');
     navigate(next === '/admin' ? '/admin' : '/dashboard');
@@ -120,25 +93,12 @@ export function LoginPage() {
                 </p>
               )}
 
-              {notice && (
-                <p className="rounded-lg border border-amber-400/30 bg-amber-900/20 px-4 py-2.5 text-sm text-amber-200">
-                  {notice}
-                </p>
-              )}
+
 
               <Button type="submit" variant="gold" fullWidth disabled={submitting}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign In'}
               </Button>
-{showResend && (
-                <button
-                  type="button"
-                  onClick={handleResendConfirmation}
-                  disabled={submitting}
-                  className="w-full text-center text-xs text-amber-300 underline-offset-4 hover:underline disabled:opacity-50"
-                >
-                  {submitting ? 'Please wait…' : 'Didn’t receive the confirmation email? Resend it'}
-                </button>
-              )}
+
             </form>
 
             <p className="mt-4 text-center text-sm text-stone-400">
