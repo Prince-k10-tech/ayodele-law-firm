@@ -126,6 +126,11 @@ Deno.serve(async (req: Request) => {
         return jsonResponse(400, { error: "Email is required" });
       }
 
+      const resendApiKey = Deno.env.get("RESEND_API_KEY");
+      if (!resendApiKey) {
+        return jsonResponse(503, { error: "Device verification email is not configured yet. Please contact the firm." });
+      }
+
       // Find the user
       const { data: userList } = await adminClient.auth.admin.listUsers();
       const user = userList.users.find((u) => u.email?.toLowerCase() === email.toLowerCase().trim());
@@ -166,7 +171,6 @@ Deno.serve(async (req: Request) => {
       });
 
       // Send verification email with "I'm the one" button
-      const resendApiKey = Deno.env.get("RESEND_API_KEY");
       const baseUrl = app_url || Deno.env.get("APP_URL") || "";
       const confirmUrl = `${baseUrl}/#/device-verify?token=${verifyToken}&action=confirm`;
       const denyUrl = `${baseUrl}/#/device-verify?token=${verifyToken}&action=deny`;
@@ -194,7 +198,7 @@ Deno.serve(async (req: Request) => {
           </div>
         `;
 
-        await fetch("https://api.resend.com/emails", {
+        const emailResponse = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${resendApiKey}`,
@@ -207,6 +211,10 @@ Deno.serve(async (req: Request) => {
             html,
           }),
         });
+        if (!emailResponse.ok) {
+          await adminClient.from("otp_codes").delete().eq("user_id", user.id).eq("purpose", "device_verification").eq("code_hash", tokenHash).is("consumed_at", null);
+          return jsonResponse(502, { error: "The email provider could not deliver the device verification message. Please try again later." });
+        }
       }
 
       return jsonResponse(200, { success: true, message: "Verification email sent." });
