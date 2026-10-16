@@ -2,11 +2,13 @@ import { Activity, ArrowLeft, CheckCircle2, LogOut, ShieldCheck, Wrench } from '
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from '@/lib/router';
+import { supabase } from '@/lib/supabase';
 
 export function SuperadminPage() {
   const { user, loading, isSuperadmin, signOut } = useAuth();
   const { navigate } = useRouter();
   const [status, setStatus] = useState('Checking session…');
+  const [bootstrapping, setBootstrapping] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -20,6 +22,20 @@ export function SuperadminPage() {
     }
     setStatus('Authenticated as superadmin');
   }, [loading, user, isSuperadmin, navigate]);
+
+  const activateSuperadmin = async () => {
+    setBootstrapping(true);
+    setStatus('Assigning your protected superadmin role…');
+    const { data, error } = await supabase.functions.invoke('manage-staff', { body: { action: 'bootstrap-superadmin' } });
+    if (error || data?.error) {
+      setStatus(data?.error ?? error?.message ?? 'Could not assign the superadmin role.');
+      setBootstrapping(false);
+      return;
+    }
+    await supabase.auth.refreshSession();
+    setStatus(data?.message ?? 'Superadmin role assigned.');
+    setBootstrapping(false);
+  };
 
   const enterAdminView = () => {
     sessionStorage.setItem('ko_admin_view', 'superadmin-test');
@@ -71,6 +87,20 @@ export function SuperadminPage() {
             </div>
           </div>
         </div>
+
+        <section className="mt-6 rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-5 sm:p-7">
+          <h2 className="text-lg font-semibold">Secure superadmin setup</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-400">
+            Register your account's protected superadmin role in Supabase. This action is restricted by the server to the designated owner account and only works if no other superadmin is already configured.
+          </p>
+          <button
+            onClick={() => void activateSuperadmin()}
+            disabled={bootstrapping}
+            className="mt-5 inline-flex items-center gap-2 rounded-xl border border-emerald-300/30 bg-emerald-400/10 px-4 py-3 text-sm font-semibold text-emerald-100 disabled:opacity-50"
+          >
+            {bootstrapping ? 'Setting up…' : 'Initialize Super Admin Role'}
+          </button>
+        </section>
 
         <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-7">
           <h2 className="text-lg font-semibold">Test the normal administrator experience</h2>
