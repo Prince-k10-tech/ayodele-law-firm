@@ -461,7 +461,7 @@ export function DashboardPage() {
                           className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
                             a.status === 'confirmed'
                               ? 'bg-emerald-500/20 text-emerald-300'
-                              : a.status === 'cancelled'
+                              : (a.status === 'cancelled' || a.status === 'rejected')
                               ? 'bg-red-500/20 text-red-300'
                               : a.status === 'rescheduled'
                               ? 'bg-sky-500/20 text-sky-300'
