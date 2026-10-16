@@ -69,6 +69,7 @@ export function SuperadminPage() {
               <p className="text-xs text-stone-500">K.O AYODELE &amp; CO</p>
             </div>
           </div>
+          <span className="rounded-full border border-violet-400/40 bg-violet-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-200">Super Admin</span>
           <button onClick={handleSignOut} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-stone-300 hover:bg-white/5">
             <LogOut className="h-4 w-4" /> Sign out
           </button>
