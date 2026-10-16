@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MailPlus, ShieldCheck, UserPlus, Users, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-type StaffRole = 'superadmin' | 'moderator';
+type StaffRole = 'superadmin' | 'moderator' | 'admin';
 type Props = { role: StaffRole; onClose: () => void };
 
 export function StaffManagementPanel({ role, onClose }: Props) {
@@ -37,9 +37,7 @@ export function StaffManagementPanel({ role, onClose }: Props) {
             <ShieldCheck className="h-5 w-5" />
             <h2 className="text-lg font-semibold">Staff access</h2>
           </div>
-          <p className="mt-2 text-sm leading-6 text-stone-400">
-            Invite staff as administrators. Invitations are emailed, and new staff must accept before signing in.
-          </p>
+          {role !== 'admin' && <p className="mt-2 text-sm leading-6 text-stone-400">Invite staff as administrators. Invitations are emailed, and new staff must accept before signing in.</p>}
           <p className="mt-2 text-xs text-stone-500">Your current role: {role}</p>
         </div>
         <button type="button" onClick={onClose} aria-label="Close staff management" className="rounded-lg p-2 text-stone-400 hover:bg-white/5 hover:text-white">
@@ -47,6 +45,7 @@ export function StaffManagementPanel({ role, onClose }: Props) {
         </button>
       </div>
 
+      {role !== 'admin' && (
       <form className="mt-5 flex flex-col gap-3 sm:flex-row" onSubmit={(event) => { event.preventDefault(); if (email.trim()) void runAction('invite-admin', email.trim()); }}>
         <label className="sr-only" htmlFor="staff-email">Staff email address</label>
         <input id="staff-email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="staff@example.com" className="min-w-0 flex-1 rounded-xl border border-white/10 bg-stone-950 px-4 py-3 text-sm text-white outline-none focus:border-amber-400/60" />
@@ -54,6 +53,7 @@ export function StaffManagementPanel({ role, onClose }: Props) {
           <UserPlus className="h-4 w-4" /> Invite admin
         </button>
       </form>
+      )}
 
       <div className="mt-5 border-t border-white/10 pt-5">
         <div className="flex items-center gap-2 text-amber-200"><Users className="h-5 w-5" /><h3 className="font-semibold">Create client portal</h3></div>
