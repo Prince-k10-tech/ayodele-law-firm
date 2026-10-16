@@ -265,7 +265,7 @@ export function DashboardPage() {
             <Logo size={36} />
             <div className="text-left">
               <p className="text-xs font-semibold tracking-wide text-stone-100 sm:text-sm">K.O AYODELE &amp; CO</p>
-              <div className="flex flex-wrap items-center gap-2"><p className="text-[9px] uppercase tracking-[0.3em] text-amber-300/70 sm:text-[10px]">Client Dashboard</p>{hasPrivilegedAccess && (<span className={`rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${displayRole === 'superadmin' ? 'border-violet-400/40 bg-violet-500/15 text-violet-200' : displayRole === 'moderator' ? 'border-sky-400/40 bg-sky-500/15 text-sky-200' : 'border-amber-400/40 bg-amber-500/15 text-amber-200'}`}>{displayRole === 'superadmin' ? 'Super Admin' : displayRole === 'moderator' ? 'Moderator' : 'Admin'}</span>)}</div>
+              <p className="text-[9px] uppercase tracking-[0.3em] text-amber-300/70 sm:text-[10px]">Client Dashboard</p>
             </div>
           </Link>
           <div className="flex items-center gap-2 sm:gap-4">
