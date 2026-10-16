@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { isSupabaseConfigured, supabase } from './supabase';
 import { getDeviceFingerprint, isAdminEmail } from './authHelpers';
 
 type AuthContextValue = {
@@ -26,6 +26,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
@@ -54,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured) return { error: 'Sign-in is temporarily unavailable because the authentication service has not been configured for this deployment.' };
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
 
@@ -88,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, fullName: string, phone: string) => {
+    if (!isSupabaseConfigured) return { error: 'Account registration is temporarily unavailable because the authentication service has not been configured for this deployment.' };
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -112,10 +119,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!isSupabaseConfigured) return;
     await supabase.auth.signOut();
   };
 
   const sendOtp = async (phone: string) => {
+    if (!isSupabaseConfigured) return { error: 'OTP verification is unavailable until authentication is configured.' };
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) return { error: 'You must be logged in to request an OTP.' };
@@ -138,12 +147,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const verifyOtp = async (code: string, purpose = 'phone_verification') => {
+    if (!isSupabaseConfigured) return { error: 'OTP verification is unavailable until authentication is configured.' };
     const { error } = await supabase.rpc('verify_otp', { p_code: code, p_purpose: purpose });
     if (error) return { error: error.message };
     return { error: null };
   };
 
   const isDeviceTrusted = async () => {
+    if (!isSupabaseConfigured) return false;
     const fp = getDeviceFingerprint();
     const { data, error } = await supabase.rpc('is_device_trusted', { p_fingerprint: fp });
     if (error) return false;
@@ -151,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const registerCurrentDevice = async () => {
+    if (!isSupabaseConfigured) throw new Error('Authentication is not configured for this deployment.');
     const fp = getDeviceFingerprint();
     const { error } = await supabase.rpc('register_device', {
       p_fingerprint: fp,
