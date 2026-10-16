@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         data: { full_name: fullName, phone },
         // Return users to this app after they confirm their email.
-        emailRedirectTo: `${window.location.origin}${window.location.pathname}#/login`,
+        emailRedirectTo: `${window.location.origin}${window.location.pathname}`,
       },
     });
     if (error) return { error: error.message };
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       type: 'signup',
       email: email.trim(),
       options: {
-        emailRedirectTo: `${window.location.origin}${window.location.pathname}#/login`,
+        emailRedirectTo: `${window.location.origin}${window.location.pathname}`,
       },
     });
     return { error: error?.message ?? null };
