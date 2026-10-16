@@ -8,6 +8,8 @@ type Props = { role: StaffRole; onClose: () => void };
 export function StaffManagementPanel({ role, onClose }: Props) {
   const [email, setEmail] = useState('');
   const [clientName, setClientName] = useState('');
+  const [roleEmail, setRoleEmail] = useState('');
+  const [targetRole, setTargetRole] = useState<'moderator' | 'admin' | 'user'>('admin');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
@@ -17,7 +19,7 @@ export function StaffManagementPanel({ role, onClose }: Props) {
     setError('');
     setNotice('');
     const { data, error: invokeError } = await supabase.functions.invoke('manage-staff', {
-      body: { action, ...(staffEmail ? { email: staffEmail } : {}), ...(action === 'invite-client' ? { fullName: clientName.trim() } : {}) },
+      body: { action, ...(staffEmail ? { email: staffEmail } : {}), ...(action === 'invite-client' ? { fullName: clientName.trim() } : {}), ...(action === 'set-user-role' ? { role: targetRole } : {}) },
     });
     setBusy(false);
     if (invokeError || data?.error) {
@@ -26,6 +28,7 @@ export function StaffManagementPanel({ role, onClose }: Props) {
     }
     setNotice(data?.message ?? 'Request completed.');
     if (action === 'invite-admin' || action === 'invite-client') setEmail('');
+    if (action === 'set-user-role') setRoleEmail('');
     if (action === 'invite-client') setClientName('');
   };
 
@@ -64,6 +67,22 @@ export function StaffManagementPanel({ role, onClose }: Props) {
           <button type="submit" disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-200 disabled:opacity-50 sm:col-span-2"><Users className="h-4 w-4" /> Create client portal and send invite</button>
         </form>
       </div>
+
+      {role === 'superadmin' && (
+        <div className="mt-5 border-t border-white/10 pt-5">
+          <div className="flex items-center gap-2 text-amber-200"><ShieldCheck className="h-5 w-5" /><h3 className="font-semibold">Change staff access</h3></div>
+          <p className="mt-2 text-sm leading-6 text-stone-400">Only you, as Super Admin, can change another account's access. Choose Client to remove staff permissions while keeping the account.</p>
+          <form className="mt-4 grid gap-3 sm:grid-cols-3" onSubmit={(event) => { event.preventDefault(); if (roleEmail.trim()) void runAction('set-user-role', roleEmail.trim()); }}>
+            <input type="email" required value={roleEmail} onChange={(event) => setRoleEmail(event.target.value)} placeholder="Account email address" className="min-w-0 rounded-xl border border-white/10 bg-stone-950 px-4 py-3 text-sm text-white outline-none focus:border-amber-400/60 sm:col-span-2" />
+            <select value={targetRole} onChange={(event) => setTargetRole(event.target.value as 'moderator' | 'admin' | 'user')} className="rounded-xl border border-white/10 bg-stone-950 px-4 py-3 text-sm text-white outline-none focus:border-amber-400/60">
+              <option value="moderator">Moderator</option>
+              <option value="admin">Admin</option>
+              <option value="user">Client (remove staff access)</option>
+            </select>
+            <button type="submit" disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-200 disabled:opacity-50 sm:col-span-3"><ShieldCheck className="h-4 w-4" /> Apply role change</button>
+          </form>
+        </div>
+      )}
 
       {role === 'superadmin' && (
         <div className="mt-4 border-t border-white/10 pt-4">
