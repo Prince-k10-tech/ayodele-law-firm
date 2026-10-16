@@ -413,7 +413,7 @@ export function DashboardPage() {
                 )}
                 {apptSuccess && (
                   <p className="rounded-lg border border-emerald-400/30 bg-emerald-900/30 px-4 py-2.5 text-sm text-emerald-200">
-                    Appointment request submitted. Our team will confirm shortly.
+                    Your appointment request has been received. Our team will get in contact with you shortly. This is a receipt, not a confirmation.
                   </p>
                 )}
 
@@ -456,6 +456,8 @@ export function DashboardPage() {
                               ? 'bg-emerald-500/20 text-emerald-300'
                               : a.status === 'cancelled'
                               ? 'bg-red-500/20 text-red-300'
+                              : a.status === 'rescheduled'
+                              ? 'bg-sky-500/20 text-sky-300'
                               : 'bg-amber-500/20 text-amber-300'
                           }`}
                         >
@@ -565,7 +567,7 @@ export function DashboardPage() {
                 )}
                 {caseSuccess && (
                   <p className="rounded-lg border border-emerald-400/30 bg-emerald-900/30 px-4 py-2.5 text-sm text-emerald-200">
-                    Case submitted successfully. Our team will review and reach out.
+                    Your submission has been received. Our team will get in contact with you shortly. This receipt does not mean the case has been approved.
                   </p>
                 )}
 
@@ -642,6 +644,10 @@ function CaseStatusBadge({ status }: { status: string }) {
     approved: {
       label: 'Processing',
       className: 'bg-emerald-500/15 text-emerald-300',
+    },
+    rejected: {
+      label: 'Not Accepted',
+      className: 'bg-red-500/15 text-red-300',
     },
   };
   const cfg = config[status] ?? { label: status, className: 'bg-stone-500/15 text-stone-300' };
