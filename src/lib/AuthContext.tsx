@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // New device — send verification email
           await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/device-verify`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
             body: JSON.stringify({
               email: data.user.email,
               app_url: window.location.origin,
@@ -135,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({ phone }),
       });
@@ -148,8 +149,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyOtp = async (code: string, purpose = 'phone_verification') => {
     if (!isSupabaseConfigured) return { error: 'OTP verification is unavailable until authentication is configured.' };
-    const { error } = await supabase.rpc('verify_otp', { p_code: code, p_purpose: purpose });
+    const { data, error } = await supabase.rpc('verify_otp', { p_code: code, p_purpose: purpose });
     if (error) return { error: error.message };
+    if (data !== true) return { error: 'The code is invalid, expired, or has reached the attempt limit. Request a new code and try again.' };
     return { error: null };
   };
 
@@ -180,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ? 'admin'
         : 'user') as 'superadmin' | 'moderator' | 'admin' | 'user';
   const isSuperadmin = role === 'superadmin';
-  const isAdmin = role === 'superadmin' || role === 'admin';
+  const isAdmin = role === 'superadmin' || role === 'moderator' || role === 'admin';
 
   return (
     <AuthContext.Provider
