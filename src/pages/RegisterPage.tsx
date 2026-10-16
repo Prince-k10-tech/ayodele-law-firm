@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Loader2, Mail, Phone, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/Button';
 import { Logo } from '@/components/Logo';
-import { Link } from '@/lib/router';
+import { Link, useRouter } from '@/lib/router';
 import { useAuth } from '@/lib/AuthContext';
 
 type Step = 'details' | 'confirmation';
 
 export function RegisterPage() {
-  const { signUp, resendEmailConfirmation } = useAuth();
+  const { signUp } = useAuth();
+  const { navigate } = useRouter();
   const [step, setStep] = useState<Step>('details');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -40,8 +41,7 @@ export function RegisterPage() {
       return;
     }
 
-    setStep('confirmation');
-    setNotice(`We created your account and sent a confirmation email to ${email.trim()}. Open that email and tap the confirmation link before signing in. Check Spam/Junk if it isn't in your inbox.`);
+    navigate('/dashboard');
   };
 
   const handleResend = async () => {
