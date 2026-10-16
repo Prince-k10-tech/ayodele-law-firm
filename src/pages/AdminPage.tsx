@@ -123,7 +123,7 @@ export function AdminPage() {
     loadAll();
   }, [user, loading, isAdmin, navigate, loadAll]);
 
-  const handleAppointmentAction = async (id: string, action: 'confirm' | 'reject' | 'reschedule', newDate?: string, newTime?: string) => {
+  const handleAppointmentAction = async (id: string, action: 'confirm' | 'cancel' | 'reject' | 'reschedule', newDate?: string, newTime?: string) => {
     setActioningId(id);
     setNotice(null);
     const { data: session } = await supabase.auth.getSession();
@@ -145,8 +145,10 @@ export function AdminPage() {
       action === 'confirm'
         ? 'Appointment confirmed. The client has been notified.'
         : action === 'reschedule'
-          ? 'Appointment rescheduled. The client has been notified of the proposed new date and time.'
-          : 'Appointment rejected. The client has been notified.',
+          ? 'Appointment rescheduled. The client portal now shows the new date and time.'
+          : action === 'cancel'
+            ? 'Appointment cancelled. The client has been notified.'
+            : 'Appointment rejected. The client has been notified.',
     );
     loadAppointments();
   };
@@ -348,7 +350,7 @@ export function AdminPage() {
               <div>
                 <h1 className="text-2xl font-semibold text-stone-50 sm:text-3xl">Appointment Approvals</h1>
                 <p className="mt-2 text-sm text-stone-400">
-                  Review incoming client appointment requests and approve or cancel them.
+                  Approve, reject, reschedule, or cancel appointment requests. Updates are reflected on the client's portal.
                 </p>
               </div>
               <div className="flex gap-2 sm:gap-3">
@@ -382,24 +384,32 @@ export function AdminPage() {
                         </div>
                         {a.case_details && <p className="mt-3 rounded-lg border border-white/5 bg-stone-900/40 px-4 py-3 text-sm text-stone-400">{a.case_details}</p>}
                       </div>
-                      {(a.status === 'pending' || a.status === 'rescheduled') && (
-                        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-                          <button onClick={() => handleAppointmentAction(a.id, 'confirm')} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-4 py-2.5 text-sm font-medium text-emerald-950 shadow transition hover:shadow-lg disabled:opacity-50">
-                            {actioningId === a.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                            Approve
-                          </button>
-                          <button onClick={() => handleAppointmentAction(a.id, 'reject')} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-400/30 bg-red-900/20 px-4 py-2.5 text-sm font-medium text-red-200 transition hover:bg-red-800/40 disabled:opacity-50">
-                            <XCircle className="h-4 w-4" />
-                            Reject
-                          </button>
+                      {!['cancelled', 'rejected'].includes(a.status) && (
+                        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap">
+                          {(a.status === 'pending' || a.status === 'rescheduled') && (
+                            <>
+                              <button onClick={() => handleAppointmentAction(a.id, 'confirm')} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-4 py-2.5 text-sm font-medium text-emerald-950 shadow transition hover:shadow-lg disabled:opacity-50">
+                                {actioningId === a.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                                Approve
+                              </button>
+                              <button onClick={() => handleAppointmentAction(a.id, 'reject')} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-400/30 bg-red-900/20 px-4 py-2.5 text-sm font-medium text-red-200 transition hover:bg-red-800/40 disabled:opacity-50">
+                                <XCircle className="h-4 w-4" /> Reject
+                              </button>
+                            </>
+                          )}
                           <button onClick={() => {
-                            const newDate = window.prompt('Enter the proposed new date (YYYY-MM-DD)', a.preferred_date);
+                            const newDate = window.prompt('Enter the new appointment date (YYYY-MM-DD)', a.preferred_date);
                             if (!newDate) return;
-                            const newTime = window.prompt('Enter the proposed new time (HH:MM, 24-hour)', a.preferred_time.slice(0, 5));
+                            const newTime = window.prompt('Enter the new appointment time (HH:MM, 24-hour)', a.preferred_time.slice(0, 5));
                             if (!newTime) return;
                             void handleAppointmentAction(a.id, 'reschedule', newDate, newTime);
                           }} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-sky-400/30 bg-sky-900/20 px-4 py-2.5 text-sm font-medium text-sky-200 transition hover:bg-sky-800/40 disabled:opacity-50">
                             <Clock className="h-4 w-4" /> Reschedule
+                          </button>
+                          <button onClick={() => {
+                            if (window.confirm('Cancel this appointment? The client will be notified.')) void handleAppointmentAction(a.id, 'cancel');
+                          }} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-400/30 bg-red-900/10 px-4 py-2.5 text-sm font-medium text-red-200 transition hover:bg-red-800/30 disabled:opacity-50">
+                            <XCircle className="h-4 w-4" /> Cancel
                           </button>
                         </div>
                       )}
