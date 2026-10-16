@@ -443,7 +443,7 @@ export function AdminPage() {
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <h3 className="text-sm font-semibold text-stone-50 sm:text-base">{c.case_title}</h3>
+                          <button type="button" onClick={() => { if (c.status === 'submitted') void handleCaseAction(c.id, 'view'); }} className="text-left text-sm font-semibold text-stone-50 hover:text-amber-200 sm:text-base">{c.case_title}</button>
                           <CaseStatusBadge status={c.status} />
                         </div>
                         {c.case_category && <p className="mt-1 text-xs text-amber-300/70">{c.case_category}</p>}
