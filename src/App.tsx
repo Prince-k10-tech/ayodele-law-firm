@@ -15,6 +15,7 @@ import { AccountSetupPage } from '@/pages/AccountSetupPage';
 
 function Routes() {
   const { path } = useRouter();
+  if (new URLSearchParams(window.location.search).get('setup') === '1') return <AccountSetupPage />;
   const clean = path.replace(/^\/+/, '') || 'home';
 
   if (clean.startsWith('initial-setup')) return <InitialSetupPage />;
