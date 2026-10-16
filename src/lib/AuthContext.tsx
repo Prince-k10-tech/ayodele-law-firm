@@ -102,19 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) return { error: error.message };
 
-    // Create user profile with phone number
-    if (data.user) {
-      const { error: profileErr } = await supabase.from('user_profiles').insert({
-        id: data.user.id,
-        phone,
-        full_name: fullName,
-        two_factor_enabled: true,
-      });
-      if (profileErr && !profileErr.message.includes('duplicate')) {
-        return { error: 'Account created but profile setup failed: ' + profileErr.message };
-      }
-    }
-
+    // The database creates the matching profile with a SECURITY DEFINER trigger.
+    // Do not insert from the browser: email-confirmation signups may not have a session yet,
+    // so an authenticated-only RLS insert would fail even though Auth account creation succeeded.
     return { error: null };
   };
 
