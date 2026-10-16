@@ -235,7 +235,7 @@ export function AdminPage() {
             <Logo size={36} />
             <div className="text-left">
               <p className="text-xs font-semibold tracking-wide text-stone-100 sm:text-sm">K.O AYODELE &amp; CO</p>
-              <div className="flex flex-wrap items-center gap-2"><p className="text-[9px] uppercase tracking-[0.3em] text-amber-300/70 sm:text-[10px]">{role === 'superadmin' ? 'Super Admin Dashboard' : role === 'moderator' ? 'Moderator Dashboard' : 'Admin Dashboard'}</p><span className={`rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${role === 'superadmin' ? 'border-violet-400/40 bg-violet-500/15 text-violet-200' : role === 'moderator' ? 'border-sky-400/40 bg-sky-500/15 text-sky-200' : 'border-amber-400/40 bg-amber-500/15 text-amber-200'}`}>{role === 'superadmin' ? 'Super Admin' : role === 'moderator' ? 'Moderator' : 'Admin'}</span></div>
+              <p className="text-[9px] uppercase tracking-[0.3em] text-amber-300/70 sm:text-[10px]">{role === 'superadmin' ? 'Super Admin Dashboard' : role === 'moderator' ? 'Moderator Dashboard' : 'Admin Dashboard'}</p>
             </div>
           </Link>
           <div className="flex items-center gap-2 sm:gap-4">
@@ -257,6 +257,9 @@ export function AdminPage() {
             )}
             <span className="hidden items-center gap-1.5 text-xs text-amber-200/70 sm:inline-flex">
               <ShieldCheck className="h-4 w-4" /> {user?.email}
+            </span>
+            <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${role === 'superadmin' ? 'border-violet-400/40 bg-violet-500/15 text-violet-200' : role === 'moderator' ? 'border-sky-400/40 bg-sky-500/15 text-sky-200' : 'border-amber-400/40 bg-amber-500/15 text-amber-200'}`}>
+              {role === 'superadmin' ? 'Super Admin' : role === 'moderator' ? 'Moderator' : 'Admin'}
             </span>
             <button
               onClick={handleSignOut}
