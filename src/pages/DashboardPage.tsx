@@ -81,8 +81,7 @@ export function DashboardPage() {
       navigate('/login');
       return;
     }
-    const email = user.email?.toLowerCase() ?? '';
-    if (role === 'superadmin' || role === 'moderator' || role === 'admin' || email === 'iretomiwadada780@gmail.com' || email === 'koayodeleandco@gmail.com') {
+    if (role === 'superadmin' || role === 'moderator' || role === 'admin') {
       navigate('/admin');
       return;
     }
@@ -110,8 +109,7 @@ export function DashboardPage() {
   };
 
   const fullName = (user?.user_metadata as { full_name?: string } | undefined)?.full_name ?? user?.email ?? 'Client';
-  const normalizedEmail = user?.email?.toLowerCase();
-  const displayRole = normalizedEmail === 'iretomiwadada780@gmail.com' ? 'superadmin' : normalizedEmail === 'koayodeleandco@gmail.com' ? 'moderator' : role;
+  const displayRole = role;
   const hasPrivilegedAccess = displayRole === 'superadmin' || displayRole === 'moderator' || displayRole === 'admin';
 
   const handleAppointment = async (e: React.FormEvent) => {
