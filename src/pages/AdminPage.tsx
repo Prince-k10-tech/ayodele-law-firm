@@ -49,8 +49,6 @@ type CaseSubmission = {
   created_at: string;
 };
 
-const ADMIN_EMAILS = ['koayodeleandco@gmail.com'];
-
 export function AdminPage() {
   const { user, loading, signOut, isSuperadmin, role } = useAuth();
   const { navigate } = useRouter();
@@ -66,7 +64,7 @@ export function AdminPage() {
   const [adminView, setAdminView] = useState(false);
   const [showStaffManagement, setShowStaffManagement] = useState(false);
 
-  const isAdmin = role === 'admin' || role === 'moderator' || role === 'superadmin' || (user?.email ? ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
+  const isAdmin = role === 'admin' || role === 'moderator' || role === 'superadmin';
 
   const loadAppointments = useCallback(async () => {
     const { data: session } = await supabase.auth.getSession();
