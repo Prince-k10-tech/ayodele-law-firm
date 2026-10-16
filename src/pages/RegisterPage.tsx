@@ -1,41 +1,38 @@
 import { useState } from 'react';
-import { Loader2, Phone, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Loader2, Mail, Phone, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/Button';
 import { Logo } from '@/components/Logo';
-import { Link, useRouter } from '@/lib/router';
+import { Link } from '@/lib/router';
 import { useAuth } from '@/lib/AuthContext';
 
-type Step = 'details' | 'otp';
+type Step = 'details' | 'confirmation';
 
 export function RegisterPage() {
-  const { signUp, sendOtp, verifyOtp } = useAuth();
-  const { navigate } = useRouter();
-
+  const { signUp, resendEmailConfirmation } = useAuth();
   const [step, setStep] = useState<Step>('details');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [otpCode, setOtpCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
 
   const handleDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setNotice(null);
     if (password.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
     }
     if (!phone.trim() || phone.trim().length < 7) {
-      setError('A valid phone number is required for OTP verification.');
+      setError('Please enter a valid phone number. It can be used for SMS verification once SMS delivery is enabled.');
       return;
     }
 
     setSubmitting(true);
-    const { error: signUpError } = await signUp(email, password, fullName, phone);
+    const { error: signUpError } = await signUp(email.trim(), password, fullName.trim(), phone.trim());
     setSubmitting(false);
 
     if (signUpError) {
@@ -43,54 +40,21 @@ export function RegisterPage() {
       return;
     }
 
-    // Account created — now send OTP
-    setSubmitting(true);
-    const { error: otpError, deliveredVia } = await sendOtp(phone);
-    setSubmitting(false);
-
-    if (otpError) {
-      setError(otpError);
-      return;
-    }
-
-    setOtpSent(true);
-    setNotice(
-      'A 6-digit verification code has been sent to your email. Enter it below to complete your registration.',
-    );
-    setStep('otp');
+    setStep('confirmation');
+    setNotice(`We created your account and sent a confirmation email to ${email.trim()}. Open that email and tap the confirmation link before signing in. Check Spam/Junk if it isn't in your inbox.`);
   };
 
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleResend = async () => {
     setError(null);
-    if (otpCode.length !== 6) {
-      setError('Please enter the 6-digit code.');
-      return;
-    }
-
+    setNotice(null);
     setSubmitting(true);
-    const { error: verifyError } = await verifyOtp(otpCode, 'phone_verification');
+    const { error: resendError } = await resendEmailConfirmation(email.trim());
     setSubmitting(false);
-
-    if (verifyError) {
-      setError(verifyError);
+    if (resendError) {
+      setError(resendError);
       return;
     }
-
-    setNotice('Phone number verified successfully! Redirecting to your dashboard…');
-    setTimeout(() => navigate('/dashboard'), 1500);
-  };
-
-  const handleResendOtp = async () => {
-    setError(null);
-    setSubmitting(true);
-    const { error: otpError } = await sendOtp(phone);
-    setSubmitting(false);
-    if (otpError) {
-      setError(otpError);
-      return;
-    }
-    setNotice('A new verification code has been sent.');
+    setNotice(`We've requested a new confirmation email for ${email.trim()}. Check your inbox and Spam/Junk folder.`);
   };
 
   return (
@@ -111,7 +75,7 @@ export function RegisterPage() {
           </Link>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
-            {step === 'details' && (
+            {step === 'details' ? (
               <>
                 <h2 className="text-center text-2xl font-semibold text-stone-50">Create your account</h2>
                 <p className="mt-2 text-center text-sm text-stone-400">
@@ -120,165 +84,71 @@ export function RegisterPage() {
 
                 <form onSubmit={handleDetailsSubmit} className="mt-8 space-y-5">
                   <div>
-                    <label htmlFor="fullName" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-amber-200/70">
-                      Full Name
-                    </label>
-                    <input
-                      id="fullName"
-                      type="text"
-                      required
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Jane Doe"
-                      className="w-full rounded-lg border border-white/10 bg-stone-900/50 px-4 py-3 text-sm text-stone-100 placeholder-stone-500 outline-none transition focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20"
-                    />
+                    <label htmlFor="fullName" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-amber-200/70">Full Name</label>
+                    <input id="fullName" type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe"
+                      className="w-full rounded-lg border border-white/10 bg-stone-900/50 px-4 py-3 text-sm text-stone-100 placeholder-stone-500 outline-none transition focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20" />
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-amber-200/70">
-                      Email
-                    </label>
-                    <input
-                      id="email"
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className="w-full rounded-lg border border-white/10 bg-stone-900/50 px-4 py-3 text-sm text-stone-100 placeholder-stone-500 outline-none transition focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20"
-                    />
+                    <label htmlFor="email" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-amber-200/70">Email address</label>
+                    <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com"
+                      className="w-full rounded-lg border border-white/10 bg-stone-900/50 px-4 py-3 text-sm text-stone-100 placeholder-stone-500 outline-none transition focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20" />
                   </div>
 
                   <div>
-                    <label htmlFor="phone" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-amber-200/70">
-                      Phone Number
-                    </label>
+                    <label htmlFor="phone" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-amber-200/70">Phone Number</label>
                     <div className="relative">
                       <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-300/50" />
-                      <input
-                        id="phone"
-                        type="tel"
-                        required
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+234 801 234 5678"
-                        className="w-full rounded-lg border border-white/10 bg-stone-900/50 px-4 py-3 pl-10 text-sm text-stone-100 placeholder-stone-500 outline-none transition focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20"
-                      />
+                      <input id="phone" type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+234 801 234 5678"
+                        className="w-full rounded-lg border border-white/10 bg-stone-900/50 px-4 py-3 pl-10 text-sm text-stone-100 placeholder-stone-500 outline-none transition focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20" />
                     </div>
-                    <p className="mt-1.5 text-[11px] text-stone-500">
-                      We'll send a verification code to your email to confirm your phone number.
-                    </p>
+                    <p className="mt-1.5 text-[11px] text-stone-500">Used for account contact and future SMS verification. SMS delivery must be configured before it can be offered as a working verification method.</p>
                   </div>
 
                   <div>
-                    <label htmlFor="password" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-amber-200/70">
-                      Password
-                    </label>
-                    <input
-                      id="password"
-                      type="password"
-                      required
-                      minLength={6}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="At least 6 characters"
-                      className="w-full rounded-lg border border-white/10 bg-stone-900/50 px-4 py-3 text-sm text-stone-100 placeholder-stone-500 outline-none transition focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20"
-                    />
+                    <label htmlFor="password" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-amber-200/70">Password</label>
+                    <input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters"
+                      className="w-full rounded-lg border border-white/10 bg-stone-900/50 px-4 py-3 text-sm text-stone-100 placeholder-stone-500 outline-none transition focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20" />
                   </div>
 
-                  {error && (
-                    <p className="rounded-lg border border-red-400/30 bg-red-900/30 px-4 py-2.5 text-sm text-red-200">
-                      {error}
-                    </p>
-                  )}
+                  <div className="rounded-lg border border-amber-400/20 bg-amber-900/10 p-3 text-sm text-amber-100">
+                    <div className="flex items-center gap-2 font-medium"><Mail className="h-4 w-4" /> Verification method: Email link</div>
+                    <p className="mt-1 text-xs text-stone-300">After registration, we'll tell you clearly to check your email and provide a resend option.</p>
+                    <p className="mt-2 flex items-center gap-1.5 text-xs text-stone-400"><ShieldCheck className="h-3.5 w-3.5" /> SMS code option will be enabled once an SMS provider is configured.</p>
+                  </div>
 
+                  {error && <p role="alert" className="rounded-lg border border-red-400/30 bg-red-900/30 px-4 py-2.5 text-sm text-red-200">{error}</p>}
                   <Button type="submit" variant="gold" fullWidth disabled={submitting}>
-                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Continue'}
+                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Account & Verify Email'}
                   </Button>
                 </form>
               </>
-            )}
-
-            {step === 'otp' && (
-              <>
-                <div className="mb-6 flex flex-col items-center gap-3">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/15">
-                    <ShieldCheck className="h-7 w-7 text-amber-300" />
-                  </div>
-                  <h2 className="text-center text-2xl font-semibold text-stone-50">Verify Your Number</h2>
-                  <p className="text-center text-sm text-stone-400">
-                    Enter the 6-digit code sent to your email to complete registration.
-                  </p>
+            ) : (
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/15">
+                  <CheckCircle2 className="h-7 w-7 text-amber-300" />
                 </div>
-
-                {notice && (
-                  <p className="mb-4 rounded-lg border border-amber-400/30 bg-amber-900/20 px-4 py-2.5 text-sm text-amber-200">
-                    {notice}
-                  </p>
-                )}
-
-                <form onSubmit={handleOtpSubmit} className="space-y-5">
-                  <div>
-                    <label htmlFor="otpCode" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-amber-200/70">
-                      Verification Code
-                    </label>
-                    <input
-                      id="otpCode"
-                      type="text"
-                      inputMode="numeric"
-                      pattern="\d{6}"
-                      maxLength={6}
-                      required
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                      placeholder="000000"
-                      className="w-full rounded-lg border border-white/10 bg-stone-900/50 px-4 py-3 text-center text-2xl font-semibold tracking-[0.5em] text-stone-100 placeholder-stone-600 outline-none transition focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20"
-                    />
-                  </div>
-
-                  {error && (
-                    <p className="rounded-lg border border-red-400/30 bg-red-900/30 px-4 py-2.5 text-sm text-red-200">
-                      {error}
-                    </p>
-                  )}
-
-                  <Button type="submit" variant="gold" fullWidth disabled={submitting}>
-                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify & Complete'}
-                  </Button>
-                </form>
-
-                <div className="mt-6 flex items-center justify-between text-sm">
-                  <button
-                    onClick={() => setStep('details')}
-                    className="text-stone-400 underline-offset-4 hover:text-stone-200 hover:underline"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={handleResendOtp}
-                    disabled={submitting}
-                    className="text-amber-300 underline-offset-4 hover:underline disabled:opacity-50"
-                  >
-                    Resend code
-                  </button>
-                </div>
-              </>
+                <h2 className="text-2xl font-semibold text-stone-50">Check your email</h2>
+                <p className="mt-3 text-sm leading-6 text-stone-300">{notice}</p>
+                <p className="mt-3 text-xs leading-5 text-stone-400">Your account won't be ready to sign in until you confirm the email address. If the message doesn't arrive, check Spam/Junk and resend it below.</p>
+                {error && <p role="alert" className="mt-4 rounded-lg border border-red-400/30 bg-red-900/30 px-4 py-2.5 text-sm text-red-200">{error}</p>}
+                {notice && <p aria-live="polite" className="sr-only">{notice}</p>}
+                <Button onClick={handleResend} variant="gold" fullWidth disabled={submitting} className="mt-6">
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Resend confirmation email'}
+                </Button>
+                <p className="mt-4 text-sm text-stone-400">Already confirmed it?</p>
+                <Link to="/login" className="mt-1 inline-block font-medium text-amber-300 underline-offset-4 hover:underline">Continue to sign in</Link>
+              </div>
             )}
 
             <p className="mt-6 text-center text-sm text-stone-400">
-              Already have an account?{' '}
-              <Link to="/login" className="font-medium text-amber-300 underline-offset-4 hover:underline">
-                Login here
-              </Link>
+              Already have an account? <Link to="/login" className="font-medium text-amber-300 underline-offset-4 hover:underline">Login here</Link>
             </p>
           </div>
 
-          <p className="mt-6 text-center text-[11px] text-stone-500">
-            <Link to="/" className="hover:text-stone-300">← Back to home</Link>
-          </p>
+          <p className="mt-6 text-center text-[11px] text-stone-500"><Link to="/" className="hover:text-stone-300">← Back to home</Link></p>
         </div>
       </div>
-
       <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(12px);} to { opacity:1; transform: translateY(0);} }`}</style>
     </div>
   );
