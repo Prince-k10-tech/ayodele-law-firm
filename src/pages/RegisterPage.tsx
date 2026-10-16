@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Mail, Phone, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Loader2, Mail, Phone, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/Button';
 import { Logo } from '@/components/Logo';
 import { Link } from '@/lib/router';
