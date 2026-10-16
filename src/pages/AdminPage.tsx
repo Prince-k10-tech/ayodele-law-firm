@@ -123,7 +123,7 @@ export function AdminPage() {
     loadAll();
   }, [user, loading, isAdmin, navigate, loadAll]);
 
-  const handleAppointmentAction = async (id: string, action: 'confirm' | 'cancel' | 'reschedule', newDate?: string, newTime?: string) => {
+  const handleAppointmentAction = async (id: string, action: 'confirm' | 'reject' | 'reschedule', newDate?: string, newTime?: string) => {
     setActioningId(id);
     setNotice(null);
     const { data: session } = await supabase.auth.getSession();
@@ -255,9 +255,6 @@ export function AdminPage() {
                 Maintenance
               </button>
             )}
-            <span className="hidden items-center gap-1.5 text-xs text-amber-200/70 sm:inline-flex">
-              <ShieldCheck className="h-4 w-4" /> {user?.email}
-            </span>
             <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${role === 'superadmin' ? 'border-violet-400/40 bg-violet-500/15 text-violet-200' : role === 'moderator' ? 'border-sky-400/40 bg-sky-500/15 text-sky-200' : 'border-amber-400/40 bg-amber-500/15 text-amber-200'}`}>
               {role === 'superadmin' ? 'Super Admin' : role === 'moderator' ? 'Moderator' : 'Admin'}
             </span>
@@ -391,9 +388,9 @@ export function AdminPage() {
                             {actioningId === a.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                             Approve
                           </button>
-                          <button onClick={() => handleAppointmentAction(a.id, 'cancel')} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-400/30 bg-red-900/20 px-4 py-2.5 text-sm font-medium text-red-200 transition hover:bg-red-800/40 disabled:opacity-50">
+                          <button onClick={() => handleAppointmentAction(a.id, 'reject')} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-400/30 bg-red-900/20 px-4 py-2.5 text-sm font-medium text-red-200 transition hover:bg-red-800/40 disabled:opacity-50">
                             <XCircle className="h-4 w-4" />
-                            Cancel
+                            Reject
                           </button>
                           <button onClick={() => {
                             const newDate = window.prompt('Enter the proposed new date (YYYY-MM-DD)', a.preferred_date);
