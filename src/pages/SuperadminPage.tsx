@@ -65,7 +65,7 @@ export function SuperadminPage() {
               <Wrench className="h-5 w-5 text-amber-300" />
             </div>
             <div>
-              <h1 className="font-semibold">Superadmin Maintenance</h1>
+              <div className="flex flex-wrap items-center gap-2"><h1 className="font-semibold">Superadmin Maintenance</h1><span className="rounded-full border border-violet-400/40 bg-violet-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-200">Super Admin</span></div>
               <p className="text-xs text-stone-500">K.O AYODELE &amp; CO</p>
             </div>
           </div>
