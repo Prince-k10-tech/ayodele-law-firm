@@ -47,8 +47,15 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(400, { error: "A valid phone number is required" });
     }
 
-    // Generate 6-digit OTP
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      return jsonResponse(500, { error: "Email service is not configured. Contact the firm." });
+    }
+
+    // Generate a cryptographically secure 6-digit OTP
+    const random = new Uint32Array(1);
+    crypto.getRandomValues(random);
+    const code = (100000 + (random[0] % 900000)).toString();
 
     // Hash the code for storage
     const encoder = new TextEncoder();
@@ -88,11 +95,6 @@ Deno.serve(async (req: Request) => {
     }
 
     // Send OTP via email
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendApiKey) {
-      return jsonResponse(500, { error: "Email service is not configured. Contact the firm." });
-    }
-
     const html = `
       <div style="font-family: Georgia, 'Times New Roman', serif; max-width: 600px; margin: 0 auto; padding: 32px; color: #1c1917;">
         <div style="text-align: center; border-bottom: 2px solid #d4af37; padding-bottom: 16px; margin-bottom: 24px;">
@@ -113,7 +115,7 @@ Deno.serve(async (req: Request) => {
       </div>
     `;
 
-    await fetch("https://api.resend.com/emails", {
+    const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${resendApiKey}`,
@@ -126,6 +128,16 @@ Deno.serve(async (req: Request) => {
         html,
       }),
     });
+
+    if (!emailResponse.ok) {
+      await adminClient
+        .from("otp_codes")
+        .delete()
+        .eq("user_id", userId)
+        .eq("purpose", "phone_verification")
+        .is("consumed_at", null);
+      return jsonResponse(502, { error: "The email provider could not deliver the verification code. Please try again later." });
+    }
 
     return jsonResponse(200, {
       success: true,
