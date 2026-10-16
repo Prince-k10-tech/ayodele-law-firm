@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MailPlus, ShieldCheck, UserPlus, X } from 'lucide-react';
+import { MailPlus, ShieldCheck, UserPlus, Users, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 type StaffRole = 'superadmin' | 'moderator';
@@ -7,6 +7,7 @@ type Props = { role: StaffRole; onClose: () => void };
 
 export function StaffManagementPanel({ role, onClose }: Props) {
   const [email, setEmail] = useState('');
+  const [clientName, setClientName] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
@@ -16,7 +17,7 @@ export function StaffManagementPanel({ role, onClose }: Props) {
     setError('');
     setNotice('');
     const { data, error: invokeError } = await supabase.functions.invoke('manage-staff', {
-      body: { action, ...(staffEmail ? { email: staffEmail } : {}) },
+      body: { action, ...(staffEmail ? { email: staffEmail } : {}), ...(action === 'invite-client' ? { fullName: clientName.trim() } : {}) },
     });
     setBusy(false);
     if (invokeError || data?.error) {
@@ -24,7 +25,8 @@ export function StaffManagementPanel({ role, onClose }: Props) {
       return;
     }
     setNotice(data?.message ?? 'Request completed.');
-    if (action === 'invite-admin') setEmail('');
+    if (action === 'invite-admin' || action === 'invite-client') setEmail('');
+    if (action === 'invite-client') setClientName('');
   };
 
   return (
@@ -52,6 +54,16 @@ export function StaffManagementPanel({ role, onClose }: Props) {
           <UserPlus className="h-4 w-4" /> Invite admin
         </button>
       </form>
+
+      <div className="mt-5 border-t border-white/10 pt-5">
+        <div className="flex items-center gap-2 text-amber-200"><Users className="h-5 w-5" /><h3 className="font-semibold">Create client portal</h3></div>
+        <p className="mt-2 text-sm leading-6 text-stone-400">Send a secure account invitation. The client sets their own password from the email before using the client dashboard.</p>
+        <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); if (email.trim() && clientName.trim()) void runAction('invite-client', email.trim()); }}>
+          <input type="text" required value={clientName} onChange={(event) => setClientName(event.target.value)} placeholder="Client full name" className="min-w-0 rounded-xl border border-white/10 bg-stone-950 px-4 py-3 text-sm text-white outline-none focus:border-amber-400/60" />
+          <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="client@example.com" className="min-w-0 rounded-xl border border-white/10 bg-stone-950 px-4 py-3 text-sm text-white outline-none focus:border-amber-400/60" />
+          <button type="submit" disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-200 disabled:opacity-50 sm:col-span-2"><Users className="h-4 w-4" /> Create client portal and send invite</button>
+        </form>
+      </div>
 
       {role === 'superadmin' && (
         <div className="mt-4 border-t border-white/10 pt-4">
