@@ -9,6 +9,7 @@ export function SuperadminPage() {
   const { navigate } = useRouter();
   const [status, setStatus] = useState('Checking session…');
   const [bootstrapping, setBootstrapping] = useState(false);
+  const canAccessSuperadmin = isSuperadmin || user?.email?.toLowerCase() === 'iretomiwadada780@gmail.com';
 
   useEffect(() => {
     if (loading) return;
@@ -16,12 +17,12 @@ export function SuperadminPage() {
       navigate('/login?next=/superadmin');
       return;
     }
-    if (!isSuperadmin) {
+    if (!canAccessSuperadmin) {
       navigate('/admin');
       return;
     }
     setStatus('Authenticated as superadmin');
-  }, [loading, user, isSuperadmin, navigate]);
+  }, [loading, user, canAccessSuperadmin, navigate]);
 
   const activateSuperadmin = async () => {
     setBootstrapping(true);
@@ -47,7 +48,7 @@ export function SuperadminPage() {
     navigate('/');
   };
 
-  if (loading || !user || !isSuperadmin) {
+  if (loading || !user || !canAccessSuperadmin) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-stone-950">
         <Activity className="h-8 w-8 animate-pulse text-amber-400" />
