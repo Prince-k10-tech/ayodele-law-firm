@@ -81,10 +81,15 @@ export function DashboardPage() {
       navigate('/login');
       return;
     }
+    const email = user.email?.toLowerCase() ?? '';
+    if (role === 'superadmin' || role === 'moderator' || role === 'admin' || email === 'iretomiwadada780@gmail.com' || email === 'koayodeleandco@gmail.com') {
+      navigate('/admin');
+      return;
+    }
     loadAppointments();
     loadCases();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, loading]);
+  }, [user, loading, role]);
 
   const loadAppointments = async () => {
     const { data } = await supabase
