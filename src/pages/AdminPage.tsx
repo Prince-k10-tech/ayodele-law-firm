@@ -19,6 +19,7 @@ import { Logo } from '@/components/Logo';
 import { Link, useRouter } from '@/lib/router';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { StaffManagementPanel } from '@/components/StaffManagementPanel';
 
 type Appointment = {
   id: string;
@@ -58,8 +59,9 @@ export function AdminPage() {
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [adminView, setAdminView] = useState(false);
+  const [showStaffManagement, setShowStaffManagement] = useState(false);
 
-  const isAdmin = role === 'admin' || role === 'superadmin' || (user?.email ? ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
+  const isAdmin = role === 'admin' || role === 'moderator' || role === 'superadmin' || (user?.email ? ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
 
   const loadAppointments = useCallback(async () => {
     const { data: session } = await supabase.auth.getSession();
@@ -214,6 +216,14 @@ export function AdminPage() {
             </div>
           </Link>
           <div className="flex items-center gap-2 sm:gap-4">
+            {(role === 'superadmin' || role === 'moderator') && (
+              <button
+                onClick={() => setShowStaffManagement((current) => !current)}
+                className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-200 transition hover:bg-amber-400/10"
+              >
+                {showStaffManagement ? 'Close Staff' : 'Manage Staff'}
+              </button>
+            )}
             {isSuperadmin && (
               <button
                 onClick={() => navigate('/superadmin')}
@@ -235,6 +245,11 @@ export function AdminPage() {
             </button>
           </div>
         </div>
+        {showStaffManagement && (role === 'superadmin' || role === 'moderator') && (
+          <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6">
+            <StaffManagementPanel role={role} onClose={() => setShowStaffManagement(false)} />
+          </div>
+        )}
         {/* Tabs */}
         <div className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 sm:px-6">
           <TabButton
