@@ -6,7 +6,7 @@ import { Link, useRouter } from '@/lib/router';
 import { useAuth } from '@/lib/AuthContext';
 
 export function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, resendEmailConfirmation } = useAuth();
   const { navigate } = useRouter();
 
   const [email, setEmail] = useState('');
@@ -14,6 +14,23 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const handleResendConfirmation = async () => {
+    setError(null);
+    setNotice(null);
+    if (!email.trim()) {
+      setError('Enter your email address first, then request a new confirmation email.');
+      return;
+    }
+    setSubmitting(true);
+    const { error: resendError } = await resendEmailConfirmation(email.trim());
+    setSubmitting(false);
+    if (resendError) {
+      setError(resendError);
+      return;
+    }
+    setNotice(`We've requested a new confirmation email for ${email.trim()}. Check your inbox and Spam/Junk folder, then tap the confirmation link before signing in.`);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +126,14 @@ export function LoginPage() {
               <Button type="submit" variant="gold" fullWidth disabled={submitting}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign In'}
               </Button>
+              <button
+                type="button"
+                onClick={handleResendConfirmation}
+                disabled={submitting}
+                className="w-full text-center text-xs text-amber-300 underline-offset-4 hover:underline disabled:opacity-50"
+              >
+                {submitting ? 'Please wait…' : 'Didn’t receive the confirmation email? Resend it'}
+              </button>
             </form>
 
             <p className="mt-4 text-center text-sm text-stone-400">
