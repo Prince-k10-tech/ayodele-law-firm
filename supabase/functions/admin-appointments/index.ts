@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 // Backward-compatible owner fallback. New authorization is driven by app_metadata.role.
+const SUPERADMIN_EMAIL = "iretomiwadada780@gmail.com";
 const OWNER_ADMIN_EMAIL = "koayodeleandco@gmail.com";
 
 Deno.serve(async (req: Request) => {
@@ -31,11 +32,13 @@ Deno.serve(async (req: Request) => {
 
     const user = userData.user;
     const role = user.app_metadata?.role;
+    const normalizedEmail = user.email?.toLowerCase();
     const isAuthorized =
       role === "admin" ||
       role === "moderator" ||
       role === "superadmin" ||
-      user.email?.toLowerCase() === OWNER_ADMIN_EMAIL;
+      normalizedEmail === OWNER_ADMIN_EMAIL ||
+      normalizedEmail === SUPERADMIN_EMAIL;
 
     if (!isAuthorized) return jsonResponse(403, { error: "Access denied. Admins only." });
 
