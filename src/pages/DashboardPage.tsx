@@ -95,6 +95,7 @@ export function DashboardPage() {
     const { data } = await supabase
       .from('appointments')
       .select('id, case_subject, preferred_date, preferred_time, status')
+      .eq('email', user?.email ?? '')
       .order('created_at', { ascending: false });
     if (data) setAppointments(data as Appointment[]);
   };
@@ -103,6 +104,7 @@ export function DashboardPage() {
     const { data } = await supabase
       .from('case_submissions')
       .select('id, case_title, case_category, file_name, status, created_at')
+      .eq('email', user?.email ?? '')
       .order('created_at', { ascending: false });
     if (data) setCases(data as CaseSubmission[]);
   };
