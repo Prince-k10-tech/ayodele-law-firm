@@ -571,11 +571,18 @@ function ApptStatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     confirmed: 'bg-emerald-500/20 text-emerald-300',
     cancelled: 'bg-red-500/20 text-red-300',
+    rejected: 'bg-red-500/20 text-red-300',
+    reschedule_pending: 'bg-sky-500/20 text-sky-200',
+    reschedule_declined: 'bg-amber-500/20 text-amber-300',
     pending: 'bg-amber-500/20 text-amber-300',
+  };
+  const labels: Record<string, string> = {
+    reschedule_pending: 'Awaiting Client Response',
+    reschedule_declined: 'Client Declined New Date',
   };
   return (
     <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${map[status] ?? 'bg-stone-500/20 text-stone-300'}`}>
-      {status}
+      {labels[status] ?? status}
     </span>
   );
 }
