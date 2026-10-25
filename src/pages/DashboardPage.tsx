@@ -22,6 +22,9 @@ type Appointment = {
   preferred_date: string;
   preferred_time: string;
   status: string;
+  proposed_date: string | null;
+  proposed_time: string | null;
+  reschedule_response: string | null;
 };
 
 type CaseSubmission = {
@@ -93,7 +96,7 @@ export function DashboardPage() {
   const loadAppointments = async () => {
     const { data } = await supabase
       .from('appointments')
-      .select('id, case_subject, preferred_date, preferred_time, status')
+      .select('id, case_subject, preferred_date, preferred_time, status, proposed_date, proposed_time, reschedule_response')
       .eq('email', user?.email ?? '')
       .order('created_at', { ascending: false });
     if (data) setAppointments(data as Appointment[]);
@@ -106,6 +109,19 @@ export function DashboardPage() {
       .eq('email', user?.email ?? '')
       .order('created_at', { ascending: false });
     if (data) setCases(data as CaseSubmission[]);
+  };
+
+  const respondToReschedule = async (appointmentId: string, action: 'accept' | 'reject') => {
+    const { data: session } = await supabase.auth.getSession();
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/client-appointment-response`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.session?.access_token ?? ''}` },
+      body: JSON.stringify({ appointmentId, action }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) { setApptError(body.error ?? 'Could not submit your response. Please try again.'); return; }
+    setApptError(null);
+    await loadAppointments();
   };
 
   const fullName = (user?.user_metadata as { full_name?: string } | undefined)?.full_name ?? user?.email ?? 'Client';
@@ -453,29 +469,25 @@ export function DashboardPage() {
                           <p className="mt-1 text-xs text-stone-400">
                             {new Date(a.preferred_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                             {'  ·  '}
-                            {a.preferred_time}
+                            {a.preferred_time.slice(0, 5)}
                           </p>
                         </div>
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
-                            a.status === 'confirmed'
-                              ? 'bg-emerald-500/20 text-emerald-300'
-                              : (a.status === 'cancelled' || a.status === 'rejected')
-                              ? 'bg-red-500/20 text-red-300'
-                              : a.status === 'rescheduled'
-                              ? 'bg-sky-500/20 text-sky-300'
-                              : 'bg-amber-500/20 text-amber-300'
-                          }`}
-                        >
-                          {({
-                            pending: 'Pending',
-                            confirmed: 'Confirmed',
-                            rescheduled: 'Rescheduled',
-                            cancelled: 'Cancelled',
-                            rejected: 'Rejected',
-                          } as Record<string, string>)[a.status] ?? a.status}
+                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${a.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-300' : (a.status === 'cancelled' || a.status === 'rejected') ? 'bg-red-500/20 text-red-300' : a.status === 'reschedule_pending' ? 'bg-sky-500/20 text-sky-200' : 'bg-amber-500/20 text-amber-300'}`}>
+                          {({ pending: 'Pending', confirmed: 'Confirmed', reschedule_pending: 'Reschedule awaiting your response', cancelled: 'Cancelled', rejected: 'Rejected' } as Record<string, string>)[a.status] ?? a.status}
                         </span>
                       </div>
+                      {a.status === 'reschedule_pending' && a.proposed_date && a.proposed_time && (
+                        <div className="mt-3 rounded-lg border border-sky-400/30 bg-sky-900/20 p-3">
+                          <p className="text-xs font-semibold text-sky-200">The firm proposed a new appointment time</p>
+                          <p className="mt-1 text-sm text-stone-100">{new Date(a.proposed_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })} · {a.proposed_time.slice(0, 5)}</p>
+                          <p className="mt-1 text-xs text-stone-400">Your original appointment remains unchanged until you respond.</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button type="button" onClick={() => void respondToReschedule(a.id, 'accept')} className="rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-stone-950 hover:bg-emerald-400">Accept new date</button>
+                            <button type="button" onClick={() => void respondToReschedule(a.id, 'reject')} className="rounded-lg border border-red-400/40 bg-red-900/20 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-900/40">Reject new date</button>
+                          </div>
+                        </div>
+                      )}
+                      {a.reschedule_response === 'rejected' && <p className="mt-2 text-xs text-amber-200">You declined the proposed date. The firm needs to follow up with you.</p>}
                     </li>
                   ))}
                 </ul>
