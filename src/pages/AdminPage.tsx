@@ -134,21 +134,26 @@ export function AdminPage() {
       body: JSON.stringify({ appointmentId: id, action, newDate, newTime }),
     });
     setActioningId(null);
+    const body = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
       setError(body.error ?? 'Action failed');
       return;
     }
-    setNotice(
-      action === 'confirm'
-        ? 'Appointment confirmed. The client has been notified.'
-        : action === 'reschedule'
-          ? 'Appointment rescheduled. The client portal now shows the new date and time.'
-          : action === 'cancel'
-            ? 'Appointment cancelled. The client has been notified.'
-            : 'Appointment rejected. The client has been notified.',
-    );
-    loadAppointments();
+
+    const actionLabel =
+      action === 'confirm' ? 'Appointment confirmed'
+        : action === 'reschedule' ? 'Appointment rescheduled'
+          : action === 'cancel' ? 'Appointment cancelled'
+            : 'Appointment rejected';
+
+    if (body.notificationSent === true) {
+      setNotice(`${actionLabel}. Resend accepted the client email request; check delivery if it does not arrive.`);
+      setError(null);
+    } else {
+      setNotice(`${actionLabel}, and the client portal status has been updated.`);
+      setError(`Client notification email was not sent: ${body.notificationError ?? 'the server did not confirm an email request'}`);
+    }
+    await loadAppointments();
   };
 
   const handleCaseAction = async (id: string, action: 'view' | 'approve' | 'reject') => {
