@@ -205,7 +205,7 @@ export function AdminPage() {
     );
   }
 
-  const pendingAppts = appointments.filter((a) => a.status === 'pending' || a.status === 'reschedule_pending');
+  const pendingAppts = appointments.filter((a) => a.status === 'pending' || a.status === 'reschedule_pending' || a.status === 'reschedule_declined');
   const confirmedAppts = appointments.filter((a) => a.status === 'confirmed');
   const cancelledAppts = appointments.filter((a) => a.status === 'cancelled');
   const newCases = cases.filter((c) => c.status === 'submitted');
