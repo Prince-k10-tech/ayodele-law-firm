@@ -2,9 +2,12 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
-// The repository is hosted under /ayodele-law-firm/ on GitHub Pages.
+// GitHub Pages hosts this project under /ayodele-law-firm/.
+// Netlify and custom-domain deployments serve from the domain root.
+const isGitHubPages = process.env.GITHUB_PAGES === 'true';
+
 export default defineConfig({
-  base: '/ayodele-law-firm/',
+  base: isGitHubPages ? '/ayodele-law-firm/' : '/',
   plugins: [react()],
   resolve: {
     alias: {
