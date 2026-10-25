@@ -123,3 +123,9 @@ CREATE POLICY "Users delete own case files" ON storage.objects FOR DELETE
     bucket_id = 'case-files'
     AND (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- Client-approved reschedule proposals: keep original date until the client responds.
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS proposed_date date;
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS proposed_time time;
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS previous_status text;
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reschedule_response text;
