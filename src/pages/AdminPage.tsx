@@ -33,6 +33,8 @@ type Appointment = {
   preferred_date: string;
   preferred_time: string;
   status: string;
+  proposed_date: string | null;
+  proposed_time: string | null;
   created_at: string;
 };
 
@@ -203,7 +205,7 @@ export function AdminPage() {
     );
   }
 
-  const pendingAppts = appointments.filter((a) => a.status === 'pending');
+  const pendingAppts = appointments.filter((a) => a.status === 'pending' || a.status === 'reschedule_pending');
   const confirmedAppts = appointments.filter((a) => a.status === 'confirmed');
   const cancelledAppts = appointments.filter((a) => a.status === 'cancelled');
   const newCases = cases.filter((c) => c.status === 'submitted');
@@ -400,15 +402,17 @@ export function AdminPage() {
                               </button>
                             </>
                           )}
-                          <button onClick={() => {
-                            const newDate = window.prompt('Enter the new appointment date (YYYY-MM-DD)', a.preferred_date);
-                            if (!newDate) return;
-                            const newTime = window.prompt('Enter the new appointment time (HH:MM, 24-hour)', a.preferred_time.slice(0, 5));
-                            if (!newTime) return;
-                            void handleAppointmentAction(a.id, 'reschedule', newDate, newTime);
-                          }} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-sky-400/30 bg-sky-900/20 px-4 py-2.5 text-sm font-medium text-sky-200 transition hover:bg-sky-800/40 disabled:opacity-50">
-                            <Clock className="h-4 w-4" /> Reschedule
-                          </button>
+                          {a.status !== 'reschedule_pending' && (
+                            <button onClick={() => {
+                              const newDate = window.prompt('Enter the proposed new appointment date (YYYY-MM-DD)', a.preferred_date);
+                              if (!newDate) return;
+                              const newTime = window.prompt('Enter the proposed new appointment time (HH:MM, 24-hour)', a.preferred_time.slice(0, 5));
+                              if (!newTime) return;
+                              void handleAppointmentAction(a.id, 'reschedule', newDate, newTime);
+                            }} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-sky-400/30 bg-sky-900/20 px-4 py-2.5 text-sm font-medium text-sky-200 transition hover:bg-sky-800/40 disabled:opacity-50">
+                              <Clock className="h-4 w-4" /> Propose new date
+                            </button>
+                          )}
                           <button onClick={() => {
                             if (window.confirm('Cancel this appointment? The client will be notified.')) void handleAppointmentAction(a.id, 'cancel');
                           }} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-400/30 bg-red-900/10 px-4 py-2.5 text-sm font-medium text-red-200 transition hover:bg-red-800/30 disabled:opacity-50">
