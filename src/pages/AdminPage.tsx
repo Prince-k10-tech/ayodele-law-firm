@@ -391,7 +391,7 @@ export function AdminPage() {
                       </div>
                       {!['cancelled', 'rejected'].includes(a.status) && (
                         <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap">
-                          {(a.status === 'pending' || a.status === 'rescheduled') && (
+                          {(a.status === 'pending' || a.status === 'rescheduled' || a.status === 'reschedule_declined') && (
                             <>
                               <button onClick={() => handleAppointmentAction(a.id, 'confirm')} disabled={actioningId === a.id} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 px-4 py-2.5 text-sm font-medium text-emerald-950 shadow transition hover:shadow-lg disabled:opacity-50">
                                 {actioningId === a.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
